@@ -24,6 +24,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -65,7 +66,7 @@ public class game extends JFrame {
 		JButton playButton = createPrimaryButton("Jouer");
 		playButton.addActionListener(e -> showScreen(SCREEN_PLAY));
 
-		JButton rulesButton = createSecondaryButton("Regle");
+		JButton rulesButton = createPrimaryButton("Regle");
 		rulesButton.addActionListener(e -> showScreen(SCREEN_RULES));
 
 		card.add(Box.createVerticalStrut(22));
@@ -109,42 +110,41 @@ public class game extends JFrame {
 	private JPanel createRulesScreen() {
 		RoundedCardPanel card = createCardBase("Infos", "Regles", "Regles de base du jeu de dames.");
 
-		JLabel rules = new JLabel(
-				"<html>"
-						+ "<div style='font-size:15px; line-height:1.6;'>"
-						+ "- Les pions se deplacent en diagonale sur les cases sombres.<br>"
-						+ "- Une capture est obligatoire quand elle est possible.<br>"
-						+ "- Un pion devient dame en atteignant la derniere ligne.<br>"
-						+ "- Une dame peut avancer et reculer en diagonale.<br>"
-						+ "- Tu gagnes si l'adversaire n'a plus de pieces ou de coups."
-						+ "</div>"
-						+ "</html>");
-		rules.setAlignmentX(Component.CENTER_ALIGNMENT);
+		JTextArea rules = new JTextArea(
+				"- Les pions se deplacent en diagonale sur les cases sombres.\n"
+						+ "- Une capture est obligatoire quand elle est possible.\n"
+						+ "- Un pion devient dame en atteignant la derniere ligne.\n"
+						+ "- Une dame peut avancer et reculer en diagonale.\n"
+						+ "- Tu gagnes si l'adversaire n'a plus de pieces ou de coups.");
+		rules.setLineWrap(true);
+		rules.setWrapStyleWord(true);
+		rules.setEditable(false);
+		rules.setFocusable(false);
+		rules.setOpaque(false);
 		rules.setForeground(new Color(249, 242, 220));
 		rules.setFont(new Font("SansSerif", Font.PLAIN, 16));
+		rules.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
 
-		JPanel rulesWrap = new JPanel(new BorderLayout());
-		rulesWrap.setOpaque(true);
-		rulesWrap.setBackground(new Color(24, 18, 12, 230));
-		rulesWrap.setBorder(BorderFactory.createCompoundBorder(
-				BorderFactory.createLineBorder(new Color(247, 184, 68, 160), 1),
-				BorderFactory.createEmptyBorder(16, 16, 16, 16)));
-		rulesWrap.add(rules, BorderLayout.CENTER);
+		RoundedRulesPanel rulesWrap = new RoundedRulesPanel();
+		rulesWrap.setLayout(new BorderLayout());
+		rulesWrap.setBorder(BorderFactory.createEmptyBorder(18, 18, 18, 18));
+		rulesWrap.setPreferredSize(new Dimension(560, 230));
+		rulesWrap.setMaximumSize(new Dimension(560, 230));
 
-		JScrollPane scroll = new JScrollPane(rulesWrap);
-		scroll.setOpaque(false);
-		scroll.getViewport().setOpaque(false);
-		scroll.setBorder(BorderFactory.createEmptyBorder());
-		scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-		scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-		scroll.setPreferredSize(new Dimension(560, 210));
-		scroll.setMaximumSize(new Dimension(560, 220));
+		JScrollPane rulesScroll = new JScrollPane(rules);
+		rulesScroll.setBorder(BorderFactory.createEmptyBorder());
+		rulesScroll.setOpaque(false);
+		rulesScroll.getViewport().setOpaque(false);
+		rulesScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		rulesScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+
+		rulesWrap.add(rulesScroll, BorderLayout.CENTER);
 
 		JButton back = createSecondaryButton("Retour accueil");
 		back.addActionListener(e -> showScreen(SCREEN_HOME));
 
 		card.add(Box.createVerticalStrut(14));
-		card.add(scroll);
+		card.add(rulesWrap);
 		card.add(Box.createVerticalStrut(14));
 		card.add(back);
 
@@ -339,6 +339,29 @@ public class game extends JFrame {
 			g2.fill(shape);
 			g2.setColor(new Color(247, 184, 68, 128));
 			g2.setStroke(new BasicStroke(1f));
+			g2.draw(shape);
+			g2.dispose();
+
+			super.paintComponent(g);
+		}
+
+		@Override
+		public boolean isOpaque() {
+			return false;
+		}
+	}
+
+	private static class RoundedRulesPanel extends JPanel {
+		@Override
+		protected void paintComponent(Graphics g) {
+			Graphics2D g2 = (Graphics2D) g.create();
+			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+			RoundRectangle2D shape = new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, 16, 16);
+			g2.setColor(new Color(24, 18, 12, 230));
+			g2.fill(shape);
+			g2.setColor(new Color(247, 184, 68, 210));
+			g2.setStroke(new BasicStroke(1.6f));
 			g2.draw(shape);
 			g2.dispose();
 
