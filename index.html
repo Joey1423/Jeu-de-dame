@@ -15,17 +15,61 @@
 
 	<main class="home">
 		<section class="hero-card">
-			<p class="badge">Projet Java</p>
-			<h1>Jeu de Dames</h1>
-			<p class="subtitle">
-				Bienvenue dans ton arene strategique.
-				Lance la partie et montre qui controle le damier.
-			</p>
+			<div class="screen is-active" id="screen-home">
+				<p class="badge">Projet Java</p>
+				<h1>Jeu de Dames</h1>
+				<p class="subtitle">Choisis ton mode et lance une partie.</p>
+				<button class="play-button" id="go-play" type="button" aria-label="Aller vers les modes de jeu">Jouer</button>
+				<button class="rules-trigger" id="go-rules" type="button" aria-label="Voir les regles">Regle</button>
+			</div>
 
-			<a class="play-button" href="#" aria-label="Lancer le jeu">
-				Jouer
-			</a>
+			<div class="screen" id="screen-play" aria-hidden="true">
+				<p class="badge">Selection</p>
+				<h1>Mode de Jeu</h1>
+				<p class="subtitle">Choisis comment tu veux jouer.</p>
+				<div class="mode-actions">
+					<button class="mode-button" type="button">1v1</button>
+					<button class="mode-button" type="button">Jouer contre IA</button>
+				</div>
+				<button class="close-menu" id="back-home-from-play" type="button">Retour accueil</button>
+			</div>
+
+			<div class="screen" id="screen-rules" aria-hidden="true">
+				<p class="badge">Infos</p>
+				<h1>Regles</h1>
+				<div class="rules-panel is-open">
+					<ul>
+						<li>Les pions se deplacent en diagonale sur les cases sombres.</li>
+						<li>Une capture est obligatoire quand elle est possible.</li>
+						<li>Un pion devient dame en atteignant la derniere ligne.</li>
+						<li>Une dame peut avancer et reculer en diagonale.</li>
+						<li>Tu gagnes si l'adversaire n'a plus de pieces ou de coups.</li>
+					</ul>
+				</div>
+				<button class="close-menu" id="back-home-from-rules" type="button">Retour accueil</button>
+			</div>
 		</section>
 	</main>
+
+	<script>
+		const screens = {
+			home: document.getElementById("screen-home"),
+			play: document.getElementById("screen-play"),
+			rules: document.getElementById("screen-rules")
+		};
+
+		function showScreen(name) {
+			Object.entries(screens).forEach(([key, screen]) => {
+				const active = key === name;
+				screen.classList.toggle("is-active", active);
+				screen.setAttribute("aria-hidden", active ? "false" : "true");
+			});
+		}
+
+		document.getElementById("go-play").addEventListener("click", () => showScreen("play"));
+		document.getElementById("go-rules").addEventListener("click", () => showScreen("rules"));
+		document.getElementById("back-home-from-play").addEventListener("click", () => showScreen("home"));
+		document.getElementById("back-home-from-rules").addEventListener("click", () => showScreen("home"));
+	</script>
 </body>
 </html>
