@@ -523,8 +523,11 @@ public class game extends JFrame {
 
 	private static class CheckersBoardPanel extends JPanel {
 		private final int boardSize;
-		private final char[][] pieces;
+		private final Plateau plateau;
 		private final int level;
+		private int selectedRow = -1;
+		private int selectedCol = -1;
+		private java.util.List<Move> legalMoves = new java.util.ArrayList<>();
 
 		CheckersBoardPanel(int level) {
 			setOpaque(false);
@@ -534,51 +537,68 @@ public class game extends JFrame {
 			setMinimumSize(new Dimension(340, 340));
 			setMaximumSize(new Dimension(760, 760));
 			this.level = level;
-			this.pieces = createInitialPosition();
+			this.plateau = new Plateau();
+			
+			// Ajouter listener pour les clics
+			addMouseListener(new java.awt.event.MouseAdapter() {
+				@Override
+				public void mouseClicked(java.awt.event.MouseEvent e) {
+					handleBoardClick(e);
+				}
+			});
+		}
+
+		
+		private void handleBoardClick(java.awt.event.MouseEvent e) {
+			// Calculer les dimensions du plateau
+			int available = Math.max(boardSize, Math.min(getWidth(), getHeight()) - 26);
+			int boardPixels = (available / boardSize) * boardSize;
+			int xOffset = (getWidth() - boardPixels) / 2;
+			int yOffset = (getHeight() - boardPixels) / 2;
+			int cell = boardPixels / boardSize;
+			
+			int col = (e.getX() - xOffset) / cell;
+			int row = (e.getY() - yOffset) / cell;
+			
+			// Vérifier que le clic est valide
+			if (row < 0 || row >= boardSize || col < 0 || col >= boardSize) {
+				return;
+			}
+			
+			// Si une pièce est sélectionnée et on clique sur un mouvement légal
+			if (selectedRow != -1 && selectedCol != -1) {
+				boolean moveFound = false;
+				for (Move move : legalMoves) {
+					if (move.toRow == row && move.toCol == col) {
+						plateau.executeMove(move);
+						moveFound = true;
+						selectedRow = -1;
+						selectedCol = -1;
+						legalMoves.clear();
+						break;
+					}
+				}
+				if (moveFound) {
+					repaint();
+					return;
+				}
+			}
+			
+			// Sélectionner une nouvelle pièce
+			char piece = plateau.getBoard()[row][col];
+			if (piece != '.' && Character.toLowerCase(piece) == plateau.getCurrentPlayer()) {
+				selectedRow = row;
+				selectedCol = col;
+				legalMoves = plateau.getLegalMoves();
+				// Filtrer pour montrer seulement les mouvements de cette pièce
+				legalMoves.removeIf(m -> m.fromRow != selectedRow || m.fromCol != selectedCol);
+				repaint();
+			}
 		}
 
 		private char[][] createInitialPosition() {
-			char[][] grid = new char[boardSize][boardSize];
-			for (int row = 0; row < boardSize; row++) {
-				for (int col = 0; col < boardSize; col++) {
-					grid[row][col] = '.';
-				}
-			}
-
-			if (level == 1) {
-				for (int row = 0; row < 4; row++) {
-					for (int col = 0; col < boardSize; col++) {
-						if ((row + col) % 2 == 1) {
-							grid[row][col] = 'b';
-						}
-					}
-				}
-
-				for (int row = boardSize - 4; row < boardSize; row++) {
-					for (int col = 0; col < boardSize; col++) {
-						if ((row + col) % 2 == 1) {
-							grid[row][col] = 'r';
-						}
-					}
-				}
-			} else {
-				for (int row = 0; row < 4; row++) {
-					for (int col = 0; col < boardSize; col++) {
-						if ((row + col) % 2 == 1) {
-							grid[row][col] = 'b';
-						}
-					}
-				}
-
-				for (int row = boardSize - 4; row < boardSize; row++) {
-					for (int col = 0; col < boardSize; col++) {
-						if ((row + col) % 2 == 1) {
-							grid[row][col] = 'r';
-						}
-					}
-				}
-			}
-			return grid;
+			// Cette méthode n'est plus utilisée
+			return new char[boardSize][boardSize];
 		}
 
 		@Override
@@ -622,6 +642,7 @@ public class game extends JFrame {
 					20,
 					20);
 
+			char[][] board = plateau.getBoard();
 			for (int row = 0; row < boardSize; row++) {
 				for (int col = 0; col < boardSize; col++) {
 					int x = xOffset + col * cell;
@@ -629,23 +650,44 @@ public class game extends JFrame {
 					g2.setColor((row + col) % 2 == 0 ? light : dark);
 					g2.fillRect(x, y, cell, cell);
 
-					char piece = pieces[row][col];
-					if (piece == 'r' || piece == 'b') {
+					// Highlight case sélectionnée
+					if (row == selectedRow && col == selectedCol) {
+						g2.setColor(new Color(255, 200, 100, 150));
+						g2.fillRect(x, y, cell, cell);
+					}
+					
+					// Afficher les mouvements possibles
+					for (Move move : legalMoves) {
+						if (move.toRow == row && move.toCol == col) {
+							g2.setColor(new Color(100, 255, 100, 150));
+							g2.fillRect(x, y, cell, cell);
+						}
+					}
+
+					char piece = board[row][col];
+					if (piece == 'r' || piece == 'b' || piece == 'R' || piece == 'B') {
 						int margin = Math.max(6, cell / 7);
 						int d = cell - (2 * margin);
 						Color pieceColor;
-						if (piece == 'b' && level == 1 && row < boardSize / 2) {
+						if (piece == 'b' || piece == 'B') {
 							pieceColor = Color.BLACK;
 						} else if (piece == 'r') {
 							pieceColor = new Color(208, 58, 46);
 						} else {
-							pieceColor = new Color(32, 32, 32);
+							pieceColor = new Color(208, 58, 46);
 						}
 						g2.setColor(pieceColor);
 						g2.fillOval(x + margin, y + margin, d, d);
 						g2.setColor(new Color(250, 236, 206, 180));
 						g2.setStroke(new BasicStroke(2f));
 						g2.drawOval(x + margin, y + margin, d, d);
+						
+						// Dessiner un petit 'D' si c'est une dame
+						if (piece == 'R' || piece == 'B') {
+							g2.setColor(new Color(255, 255, 0, 200));
+							g2.setFont(new Font("Arial", Font.BOLD, cell / 3));
+							g2.drawString("D", x + cell / 3, y + 2 * cell / 3);
+						}
 					}
 				}
 			}
