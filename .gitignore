@@ -1,9 +1,0 @@
-*.class
-*.jar
-*.exe
-.DS_Store
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
