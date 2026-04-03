@@ -558,6 +558,8 @@ public class game extends JFrame {
 		private final int boardSize;
 		private final Plateau plateau;
 		private final int level;
+		private final boolean aiOpponent;
+		private final Random random = new Random();
 		private int selectedRow = -1;
 		private int selectedCol = -1;
 		private java.util.List<Move> legalMoves = new java.util.ArrayList<>();
@@ -577,6 +579,7 @@ public class game extends JFrame {
 			setMinimumSize(new Dimension(340, 340));
 			setMaximumSize(new Dimension(760, 760));
 			this.level = level;
+			this.aiOpponent = aiOpponent;
 			this.plateau = new Plateau();
 			
 			// Ajouter listener pour les clics
@@ -590,6 +593,10 @@ public class game extends JFrame {
 
 		
 		private void handleBoardClick(java.awt.event.MouseEvent e) {
+			if (aiOpponent && plateau.getCurrentPlayer() == 'b') {
+				return;
+			}
+
 			// Calculer les dimensions du plateau
 			int available = Math.max(boardSize, Math.min(getWidth(), getHeight()) - 26);
 			int boardPixels = (available / boardSize) * boardSize;
@@ -619,6 +626,9 @@ public class game extends JFrame {
 					}
 				}
 				if (moveFound) {
+					if (aiOpponent) {
+						playAiTurn();
+					}
 					repaint();
 					return;
 				}
@@ -634,6 +644,29 @@ public class game extends JFrame {
 				legalMoves.removeIf(m -> m.fromRow != selectedRow || m.fromCol != selectedCol);
 				repaint();
 			}
+		}
+
+		private void playAiTurn() {
+			if (!aiOpponent || plateau.getCurrentPlayer() != 'b') {
+				return;
+			}
+
+			List<Move> moves = plateau.getLegalMoves();
+			if (moves.isEmpty()) {
+				return;
+			}
+
+			Move selected = moves.get(random.nextInt(moves.size()));
+			for (Move move : moves) {
+				if (move.capturedPieces.size() > selected.capturedPieces.size()) {
+					selected = move;
+				}
+			}
+
+			plateau.executeMove(selected);
+			selectedRow = -1;
+			selectedCol = -1;
+			legalMoves.clear();
 		}
 
 		private char[][] createInitialPosition() {
