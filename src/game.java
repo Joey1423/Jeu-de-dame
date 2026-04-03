@@ -33,7 +33,9 @@ public class game extends JFrame {
 	private static final String SCREEN_HOME = "home";
 	private static final String SCREEN_PLAY = "play";
 	private static final String SCREEN_RULES = "rules";
-	private static final String SCREEN_BOARD_1V1 = "board-1v1";
+	private static final String SCREEN_SELECT_MAP = "select-map";
+	private static final String SCREEN_BOARD_LEVEL1 = "board-level1";
+	private static final String SCREEN_BOARD_LEVEL2 = "board-level2";
 
 	private final CardLayout cardLayout;
 	private final JPanel cardPanel;
@@ -52,7 +54,9 @@ public class game extends JFrame {
 		cardPanel.add(createHomeScreen(), SCREEN_HOME);
 		cardPanel.add(createPlayScreen(), SCREEN_PLAY);
 		cardPanel.add(createRulesScreen(), SCREEN_RULES);
-		cardPanel.add(createBoard1v1Screen(), SCREEN_BOARD_1V1);
+		cardPanel.add(createSelectMapScreen(), SCREEN_SELECT_MAP);
+		cardPanel.add(createBoard1v1Screen(1), SCREEN_BOARD_LEVEL1);
+		cardPanel.add(createBoard1v1Screen(2), SCREEN_BOARD_LEVEL2);
 
 		GradientBackgroundPanel root = new GradientBackgroundPanel();
 		root.setLayout(new BorderLayout());
@@ -83,7 +87,7 @@ public class game extends JFrame {
 		RoundedCardPanel card = createCardBase("Selection", "Mode de Jeu", "Choisis comment tu veux jouer.");
 
 		JButton oneVsOne = createModeButton("1v1");
-		oneVsOne.addActionListener((ActionEvent e) -> showScreen(SCREEN_BOARD_1V1));
+		oneVsOne.addActionListener((ActionEvent e) -> showScreen(SCREEN_SELECT_MAP));
 
 		JButton vsAi = createModeButton("Jouer contre IA");
 		vsAi.addActionListener((ActionEvent e) -> JOptionPane.showMessageDialog(
@@ -105,14 +109,37 @@ public class game extends JFrame {
 		return wrapCentered(card);
 	}
 
-	private JPanel createBoard1v1Screen() {
-		RoundedCardPanel card = createCardBase("1v1", "Plateau", "Partie locale joueur contre joueur.");
+	private JPanel createSelectMapScreen() {
+		RoundedCardPanel card = createCardBase("1v1", "Selection Niveau", "Choisis le niveau de difficulte.");
 
-		CheckersBoardPanel boardPanel = new CheckersBoardPanel();
-		boardPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+		JButton level1 = createModeButton("Niveau 1 - Facile");
+		level1.addActionListener((ActionEvent e) -> showScreen(SCREEN_BOARD_LEVEL1));
+
+		JButton level2 = createModeButton("Niveau 2 - Difficile");
+		level2.addActionListener((ActionEvent e) -> showScreen(SCREEN_BOARD_LEVEL2));
 
 		JButton back = createSecondaryButton("Retour modes");
 		back.addActionListener(e -> showScreen(SCREEN_PLAY));
+
+		card.add(Box.createVerticalStrut(18));
+		card.add(level1);
+		card.add(Box.createVerticalStrut(10));
+		card.add(level2);
+		card.add(Box.createVerticalStrut(14));
+		card.add(back);
+
+		return wrapCentered(card);
+	}
+
+	private JPanel createBoard1v1Screen(int level) {
+		String levelText = level == 1 ? "Niveau 1" : "Niveau 2";
+		RoundedCardPanel card = createCardBase("1v1", levelText, "Partie locale joueur contre joueur.");
+
+		CheckersBoardPanel boardPanel = new CheckersBoardPanel(level);
+		boardPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+		JButton back = createSecondaryButton("Retour niveaux");
+		back.addActionListener(e -> showScreen(SCREEN_SELECT_MAP));
 
 		card.add(Box.createVerticalStrut(14));
 		card.add(boardPanel);
@@ -391,12 +418,14 @@ public class game extends JFrame {
 	private static class CheckersBoardPanel extends JPanel {
 		private static final int BOARD_SIZE = 8;
 		private final char[][] pieces;
+		private final int level;
 
-		CheckersBoardPanel() {
+		CheckersBoardPanel(int level) {
 			setOpaque(false);
 			setPreferredSize(new Dimension(420, 420));
 			setMinimumSize(new Dimension(320, 320));
 			setMaximumSize(new Dimension(900, 900));
+			this.level = level;
 			this.pieces = createInitialPosition();
 		}
 
@@ -408,18 +437,38 @@ public class game extends JFrame {
 				}
 			}
 
-			for (int row = 0; row < 3; row++) {
-				for (int col = 0; col < BOARD_SIZE; col++) {
-					if ((row + col) % 2 == 1) {
-						grid[row][col] = 'b';
+			if (level == 1) {
+				// Niveau 1 : Configuration standard (facile)
+				for (int row = 0; row < 3; row++) {
+					for (int col = 0; col < BOARD_SIZE; col++) {
+						if ((row + col) % 2 == 1) {
+							grid[row][col] = 'b';
+						}
 					}
 				}
-			}
 
-			for (int row = 5; row < BOARD_SIZE; row++) {
-				for (int col = 0; col < BOARD_SIZE; col++) {
-					if ((row + col) % 2 == 1) {
-						grid[row][col] = 'r';
+				for (int row = 5; row < BOARD_SIZE; row++) {
+					for (int col = 0; col < BOARD_SIZE; col++) {
+						if ((row + col) % 2 == 1) {
+							grid[row][col] = 'r';
+						}
+					}
+				}
+			} else {
+				// Niveau 2 : Plus de pions (difficile)
+				for (int row = 0; row < 4; row++) {
+					for (int col = 0; col < BOARD_SIZE; col++) {
+						if ((row + col) % 2 == 1) {
+							grid[row][col] = 'b';
+						}
+					}
+				}
+
+				for (int row = 4; row < BOARD_SIZE; row++) {
+					for (int col = 0; col < BOARD_SIZE; col++) {
+						if ((row + col) % 2 == 1) {
+							grid[row][col] = 'r';
+						}
 					}
 				}
 			}
@@ -437,8 +486,14 @@ public class game extends JFrame {
 			int yOffset = (getHeight() - size) / 2;
 			int cell = size / BOARD_SIZE;
 
-			Color light = new Color(233, 210, 173);
-			Color dark = new Color(120, 72, 40);
+			Color light, dark;
+			if (level == 2) {
+				light = new Color(220, 50, 50);    // Rouge vif
+				dark = new Color(60, 60, 60);       // Gris foncé
+			} else {
+				light = new Color(233, 210, 173);   // Beige clair
+				dark = new Color(120, 72, 40);      // Marron foncé
+			}
 
 			g2.setColor(new Color(247, 184, 68, 230));
 			g2.setStroke(new BasicStroke(3f));
