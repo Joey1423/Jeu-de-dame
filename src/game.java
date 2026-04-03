@@ -14,7 +14,12 @@ import java.awt.GridLayout;
 import java.awt.LinearGradientPaint;
 import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.geom.RoundRectangle2D;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -39,6 +44,7 @@ public class game extends JFrame {
 	private static final String SCREEN_SELECT_MAP = "select-map";
 	private static final String SCREEN_BOARD_LEVEL1 = "board-level1";
 	private static final String SCREEN_BOARD_LEVEL2 = "board-level2";
+	private static final String SCREEN_BOARD_AI = "board-ai";
 
 	private final CardLayout cardLayout;
 	private final JPanel cardPanel;
@@ -68,6 +74,7 @@ public class game extends JFrame {
 		cardPanel.add(createSelectMapScreen(), SCREEN_SELECT_MAP);
 		cardPanel.add(createBoard1v1Screen(1), SCREEN_BOARD_LEVEL1);
 		cardPanel.add(createBoard1v1Screen(2), SCREEN_BOARD_LEVEL2);
+		cardPanel.add(createBoardAiScreen(), SCREEN_BOARD_AI);
 
 		GradientBackgroundPanel root = new GradientBackgroundPanel();
 		root.setLayout(new BorderLayout());
@@ -101,11 +108,11 @@ public class game extends JFrame {
 		oneVsOne.addActionListener((ActionEvent e) -> showScreen(SCREEN_PLAYERS));
 
 		JButton vsAi = createModeButton("Jouer contre IA");
-		vsAi.addActionListener((ActionEvent e) -> JOptionPane.showMessageDialog(
-				this,
-				"Mode IA selectionne.",
-				"Info",
-				JOptionPane.INFORMATION_MESSAGE));
+		vsAi.addActionListener((ActionEvent e) -> {
+			playerOneName = "Joueur 1";
+			playerTwoName = "IA";
+			showScreen(SCREEN_BOARD_AI);
+		});
 
 		JButton back = createButton("Retour accueil", ButtonStyle.SECONDARY);
 		back.addActionListener(e -> showScreen(SCREEN_HOME));
@@ -221,6 +228,32 @@ public class game extends JFrame {
 		card.setBorder(BorderFactory.createEmptyBorder(24, 30, 24, 30));
 
 		CheckersBoardPanel boardPanel = new CheckersBoardPanel(level);
+		boardPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+		JButton back = createButton("Retour au mode de jeu", ButtonStyle.SECONDARY);
+		back.addActionListener(e -> showScreen(SCREEN_PLAY));
+
+		card.add(Box.createVerticalStrut(8));
+		card.add(boardPanel);
+		card.add(Box.createVerticalStrut(16));
+		card.add(back);
+
+		return wrapCentered(card);
+	}
+
+	private JPanel createBoardAiScreen() {
+		RoundedPanel card = new RoundedPanel(
+				new Color(245, 234, 206, 28),
+				new Color(247, 184, 68, 128),
+				1f,
+				24);
+		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+		card.setPreferredSize(new Dimension(760, 650));
+		card.setMinimumSize(new Dimension(620, 560));
+		card.setMaximumSize(new Dimension(1400, 1200));
+		card.setBorder(BorderFactory.createEmptyBorder(24, 30, 24, 30));
+
+		CheckersBoardPanel boardPanel = new CheckersBoardPanel(1, true);
 		boardPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
 		JButton back = createButton("Retour au mode de jeu", ButtonStyle.SECONDARY);
@@ -530,6 +563,10 @@ public class game extends JFrame {
 		private java.util.List<Move> legalMoves = new java.util.ArrayList<>();
 
 		CheckersBoardPanel(int level) {
+			this(level, false);
+		}
+
+		CheckersBoardPanel(int level, boolean aiOpponent) {
 			setOpaque(false);
 			this.boardSize = 10;
 			int baseSize = 520;
@@ -609,9 +646,9 @@ public class game extends JFrame {
 
 			int available = Math.max(boardSize, Math.min(getWidth(), getHeight()) - 26);
 			int boardPixels = (available / boardSize) * boardSize;
-			int xOffset = (getWidth() - boardPixels) / 2;
-			int yOffset = (getHeight() - boardPixels) / 2;
-			int cell = boardPixels / boardSize;
+			xOffset = (getWidth() - boardPixels) / 2;
+			yOffset = (getHeight() - boardPixels) / 2;
+			cell = boardPixels / boardSize;
 
 			Color light, dark;
 			if (level == 2) {
@@ -697,6 +734,30 @@ public class game extends JFrame {
 			g2.drawRect(xOffset, yOffset, boardPixels, boardPixels);
 
 			g2.dispose();
+		}
+
+		private static class Move {
+			private final int fromRow;
+			private final int fromCol;
+			private final int toRow;
+			private final int toCol;
+			private final boolean isCapture;
+			private final int capturedRow;
+			private final int capturedCol;
+
+			Move(int fromRow, int fromCol, int toRow, int toCol) {
+				this(fromRow, fromCol, toRow, toCol, -1, -1);
+			}
+
+			Move(int fromRow, int fromCol, int toRow, int toCol, int capturedRow, int capturedCol) {
+				this.fromRow = fromRow;
+				this.fromCol = fromCol;
+				this.toRow = toRow;
+				this.toCol = toCol;
+				this.capturedRow = capturedRow;
+				this.capturedCol = capturedCol;
+				this.isCapture = capturedRow >= 0;
+			}
 		}
 	}
 }
