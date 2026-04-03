@@ -40,6 +40,11 @@ public class game extends JFrame {
 	private final CardLayout cardLayout;
 	private final JPanel cardPanel;
 
+	private enum ButtonStyle {
+		PRIMARY,
+		SECONDARY
+	}
+
 	public game() {
 		super("Jeu de Dames");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -67,12 +72,12 @@ public class game extends JFrame {
 	}
 
 	private JPanel createHomeScreen() {
-		RoundedCardPanel card = createCardBase("Projet Java", "Jeu de Dames", "Choisis ton mode et lance une partie.");
+		RoundedPanel card = createCardBase("Projet Java", "Jeu de Dames", "Choisis ton mode et lance une partie.");
 
-		JButton playButton = createPrimaryButton("Jouer");
+		JButton playButton = createButton("Jouer", ButtonStyle.PRIMARY);
 		playButton.addActionListener(e -> showScreen(SCREEN_PLAY));
 
-		JButton rulesButton = createPrimaryButton("Regle");
+		JButton rulesButton = createButton("Regle", ButtonStyle.PRIMARY);
 		rulesButton.addActionListener(e -> showScreen(SCREEN_RULES));
 
 		card.add(Box.createVerticalStrut(22));
@@ -84,7 +89,7 @@ public class game extends JFrame {
 	}
 
 	private JPanel createPlayScreen() {
-		RoundedCardPanel card = createCardBase("Selection", "Mode de Jeu", "Choisis comment tu veux jouer.");
+		RoundedPanel card = createCardBase("Selection", "Mode de Jeu", "Choisis comment tu veux jouer.");
 
 		JButton oneVsOne = createModeButton("1v1");
 		oneVsOne.addActionListener((ActionEvent e) -> showScreen(SCREEN_SELECT_MAP));
@@ -96,7 +101,7 @@ public class game extends JFrame {
 				"Info",
 				JOptionPane.INFORMATION_MESSAGE));
 
-		JButton back = createSecondaryButton("Retour accueil");
+		JButton back = createButton("Retour accueil", ButtonStyle.SECONDARY);
 		back.addActionListener(e -> showScreen(SCREEN_HOME));
 
 		card.add(Box.createVerticalStrut(18));
@@ -109,8 +114,13 @@ public class game extends JFrame {
 		return wrapCentered(card);
 	}
 
+<<<<<<< HEAD
 	private JPanel createSelectMapScreen() {
 		RoundedCardPanel card = createCardBase("1v1", "Selection Niveau", "Choisis le niveau de difficulte.");
+=======
+	private JPanel createBoard1v1Screen() {
+		RoundedPanel card = createCardBase("1v1", "Plateau", "Partie locale joueur contre joueur.");
+>>>>>>> 3982b23d6b381fddf2cb29bbe6ac83e279446f08
 
 		JButton level1 = createModeButton("Niveau 1 - Facile");
 		level1.addActionListener((ActionEvent e) -> showScreen(SCREEN_BOARD_LEVEL1));
@@ -118,7 +128,7 @@ public class game extends JFrame {
 		JButton level2 = createModeButton("Niveau 2 - Difficile");
 		level2.addActionListener((ActionEvent e) -> showScreen(SCREEN_BOARD_LEVEL2));
 
-		JButton back = createSecondaryButton("Retour modes");
+		JButton back = createButton("Retour modes", ButtonStyle.SECONDARY);
 		back.addActionListener(e -> showScreen(SCREEN_PLAY));
 
 		card.add(Box.createVerticalStrut(18));
@@ -150,7 +160,7 @@ public class game extends JFrame {
 	}
 
 	private JPanel createRulesScreen() {
-		RoundedCardPanel card = createCardBase("Infos", "Regles", "Regles de base du jeu de dames.");
+		RoundedPanel card = createCardBase("Infos", "Regles", "Regles de base du jeu de dames.");
 
 		JTextArea rules = new JTextArea(
 				"- Les pions se deplacent en diagonale sur les cases sombres.\n"
@@ -167,7 +177,11 @@ public class game extends JFrame {
 		rules.setFont(new Font("SansSerif", Font.PLAIN, 16));
 		rules.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
 
-		RoundedRulesPanel rulesWrap = new RoundedRulesPanel();
+		RoundedPanel rulesWrap = new RoundedPanel(
+				new Color(24, 18, 12, 230),
+				new Color(247, 184, 68, 210),
+				1.6f,
+				16);
 		rulesWrap.setLayout(new BorderLayout());
 		rulesWrap.setBorder(BorderFactory.createEmptyBorder(18, 18, 18, 18));
 		rulesWrap.setPreferredSize(new Dimension(560, 230));
@@ -182,7 +196,7 @@ public class game extends JFrame {
 
 		rulesWrap.add(rulesScroll, BorderLayout.CENTER);
 
-		JButton back = createSecondaryButton("Retour accueil");
+		JButton back = createButton("Retour accueil", ButtonStyle.SECONDARY);
 		back.addActionListener(e -> showScreen(SCREEN_HOME));
 
 		card.add(Box.createVerticalStrut(14));
@@ -193,8 +207,12 @@ public class game extends JFrame {
 		return wrapCentered(card);
 	}
 
-	private RoundedCardPanel createCardBase(String badgeText, String titleText, String subtitleText) {
-		RoundedCardPanel card = new RoundedCardPanel();
+	private RoundedPanel createCardBase(String badgeText, String titleText, String subtitleText) {
+		RoundedPanel card = new RoundedPanel(
+				new Color(245, 234, 206, 28),
+				new Color(247, 184, 68, 128),
+				1f,
+				24);
 		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
 		card.setPreferredSize(new Dimension(760, 500));
 		card.setMinimumSize(new Dimension(620, 420));
@@ -224,90 +242,83 @@ public class game extends JFrame {
 		return card;
 	}
 
-	private JButton createPrimaryButton(String text) {
-		JButton button = new JButton(text) {
-			@Override
-			protected void paintComponent(Graphics g) {
-				Graphics2D g2 = (Graphics2D) g.create();
-				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-				LinearGradientPaint gradient = new LinearGradientPaint(
-						0,
-						0,
-						getWidth(),
-						0,
-						new float[] { 0f, 1f },
-						new Color[] { new Color(247, 184, 68), new Color(255, 122, 61) });
-				g2.setPaint(gradient);
-				g2.fillRoundRect(0, 0, getWidth(), getHeight(), getHeight(), getHeight());
-				g2.dispose();
-				super.paintComponent(g);
-			}
-		};
-		button.setAlignmentX(Component.CENTER_ALIGNMENT);
-		button.setForeground(new Color(35, 19, 0));
-		button.setFont(new Font("SansSerif", Font.BOLD, 18));
-		button.setOpaque(false);
-		button.setContentAreaFilled(false);
-		button.setBorderPainted(false);
-		button.setFocusPainted(false);
-		button.setMargin(new Insets(14, 38, 14, 38));
-		button.setMaximumSize(new Dimension(260, 54));
-		return button;
-	}
-
-	private JButton createSecondaryButton(String text) {
+	private JButton createButton(String text, ButtonStyle style) {
 		JButton button = new JButton(text) {
 			@Override
 			protected void paintComponent(Graphics g) {
 				Graphics2D g2 = (Graphics2D) g.create();
 				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-				Color topColor;
-				Color bottomColor;
-				if (getModel().isPressed()) {
-					topColor = new Color(95, 49, 22);
-					bottomColor = new Color(70, 36, 16);
-				} else if (getModel().isRollover()) {
-					topColor = new Color(133, 68, 30);
-					bottomColor = new Color(96, 49, 22);
+				LinearGradientPaint gradient;
+				if (style == ButtonStyle.PRIMARY) {
+					gradient = new LinearGradientPaint(
+							0,
+							0,
+							getWidth(),
+							0,
+							new float[] { 0f, 1f },
+							new Color[] { new Color(247, 184, 68), new Color(255, 122, 61) });
 				} else {
-					topColor = new Color(116, 60, 28);
-					bottomColor = new Color(82, 42, 19);
+					Color topColor;
+					Color bottomColor;
+					if (getModel().isPressed()) {
+						topColor = new Color(95, 49, 22);
+						bottomColor = new Color(70, 36, 16);
+					} else if (getModel().isRollover()) {
+						topColor = new Color(133, 68, 30);
+						bottomColor = new Color(96, 49, 22);
+					} else {
+						topColor = new Color(116, 60, 28);
+						bottomColor = new Color(82, 42, 19);
+					}
+
+					gradient = new LinearGradientPaint(
+							0,
+							0,
+							0,
+							getHeight(),
+							new float[] { 0f, 1f },
+							new Color[] { topColor, bottomColor });
 				}
 
-				LinearGradientPaint gradient = new LinearGradientPaint(
-						0,
-						0,
-						0,
-						getHeight(),
-						new float[] { 0f, 1f },
-						new Color[] { topColor, bottomColor });
-
 				g2.setPaint(gradient);
-				g2.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 14, 14);
-				g2.setColor(new Color(247, 184, 68, 230));
-				g2.setStroke(new BasicStroke(2f));
-				g2.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 14, 14);
+				int arc = style == ButtonStyle.PRIMARY ? getHeight() : 14;
+				g2.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, arc, arc);
+
+				if (style == ButtonStyle.SECONDARY) {
+					g2.setColor(new Color(247, 184, 68, 230));
+					g2.setStroke(new BasicStroke(2f));
+					g2.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 14, 14);
+				}
 
 				g2.dispose();
 				super.paintComponent(g);
 			}
 		};
+
 		button.setAlignmentX(Component.CENTER_ALIGNMENT);
-		button.setForeground(new Color(255, 244, 218));
-		button.setFont(new Font("SansSerif", Font.BOLD, 16));
+		if (style == ButtonStyle.PRIMARY) {
+			button.setForeground(new Color(35, 19, 0));
+			button.setFont(new Font("SansSerif", Font.BOLD, 18));
+			button.setMargin(new Insets(14, 38, 14, 38));
+			button.setMaximumSize(new Dimension(260, 54));
+		} else {
+			button.setForeground(new Color(255, 244, 218));
+			button.setFont(new Font("SansSerif", Font.BOLD, 16));
+			button.setRolloverEnabled(true);
+			button.setBorder(BorderFactory.createEmptyBorder(12, 24, 12, 24));
+			button.setMaximumSize(new Dimension(300, 50));
+		}
+
 		button.setOpaque(false);
 		button.setContentAreaFilled(false);
 		button.setBorderPainted(false);
 		button.setFocusPainted(false);
-		button.setRolloverEnabled(true);
-		button.setBorder(BorderFactory.createEmptyBorder(12, 24, 12, 24));
-		button.setMaximumSize(new Dimension(300, 50));
 		return button;
 	}
 
 	private JButton createModeButton(String text) {
-		JButton button = createSecondaryButton(text);
+		JButton button = createButton(text, ButtonStyle.SECONDARY);
 		button.setMaximumSize(new Dimension(340, 52));
 		return button;
 	}
@@ -369,40 +380,29 @@ public class game extends JFrame {
 		}
 	}
 
-	private static class RoundedCardPanel extends JPanel {
+	private static class RoundedPanel extends JPanel {
+		private final Color fillColor;
+		private final Color borderColor;
+		private final float borderWidth;
+		private final int arc;
+
+		RoundedPanel(Color fillColor, Color borderColor, float borderWidth, int arc) {
+			this.fillColor = fillColor;
+			this.borderColor = borderColor;
+			this.borderWidth = borderWidth;
+			this.arc = arc;
+		}
+
 		@Override
 		protected void paintComponent(Graphics g) {
 			Graphics2D g2 = (Graphics2D) g.create();
 			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-			RoundRectangle2D shape = new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, 24, 24);
-			g2.setColor(new Color(245, 234, 206, 28));
+			RoundRectangle2D shape = new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, arc, arc);
+			g2.setColor(fillColor);
 			g2.fill(shape);
-			g2.setColor(new Color(247, 184, 68, 128));
-			g2.setStroke(new BasicStroke(1f));
-			g2.draw(shape);
-			g2.dispose();
-
-			super.paintComponent(g);
-		}
-
-		@Override
-		public boolean isOpaque() {
-			return false;
-		}
-	}
-
-	private static class RoundedRulesPanel extends JPanel {
-		@Override
-		protected void paintComponent(Graphics g) {
-			Graphics2D g2 = (Graphics2D) g.create();
-			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-			RoundRectangle2D shape = new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, 16, 16);
-			g2.setColor(new Color(24, 18, 12, 230));
-			g2.fill(shape);
-			g2.setColor(new Color(247, 184, 68, 210));
-			g2.setStroke(new BasicStroke(1.6f));
+			g2.setColor(borderColor);
+			g2.setStroke(new BasicStroke(borderWidth));
 			g2.draw(shape);
 			g2.dispose();
 
@@ -481,10 +481,11 @@ public class game extends JFrame {
 			Graphics2D g2 = (Graphics2D) g.create();
 			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-			int size = Math.min(getWidth(), getHeight());
-			int xOffset = (getWidth() - size) / 2;
-			int yOffset = (getHeight() - size) / 2;
-			int cell = size / BOARD_SIZE;
+			int available = Math.max(BOARD_SIZE, Math.min(getWidth(), getHeight()) - 26);
+			int boardPixels = (available / BOARD_SIZE) * BOARD_SIZE;
+			int xOffset = (getWidth() - boardPixels) / 2;
+			int yOffset = (getHeight() - boardPixels) / 2;
+			int cell = boardPixels / BOARD_SIZE;
 
 			Color light, dark;
 			if (level == 2) {
@@ -495,9 +496,25 @@ public class game extends JFrame {
 				dark = new Color(120, 72, 40);      // Marron foncé
 			}
 
-			g2.setColor(new Color(247, 184, 68, 230));
-			g2.setStroke(new BasicStroke(3f));
-			g2.drawRoundRect(xOffset - 6, yOffset - 6, size + 12, size + 12, 16, 16);
+			int framePadding = 10;
+			g2.setColor(new Color(52, 32, 18, 230));
+			g2.fillRoundRect(
+					xOffset - framePadding,
+					yOffset - framePadding,
+					boardPixels + (framePadding * 2),
+					boardPixels + (framePadding * 2),
+					20,
+					20);
+
+			g2.setColor(new Color(247, 184, 68, 240));
+			g2.setStroke(new BasicStroke(2.5f));
+			g2.drawRoundRect(
+					xOffset - framePadding,
+					yOffset - framePadding,
+					boardPixels + (framePadding * 2),
+					boardPixels + (framePadding * 2),
+					20,
+					20);
 
 			for (int row = 0; row < BOARD_SIZE; row++) {
 				for (int col = 0; col < BOARD_SIZE; col++) {
@@ -518,6 +535,10 @@ public class game extends JFrame {
 					}
 				}
 			}
+
+			g2.setColor(new Color(42, 24, 12, 210));
+			g2.setStroke(new BasicStroke(2f));
+			g2.drawRect(xOffset, yOffset, boardPixels, boardPixels);
 
 			g2.dispose();
 		}
