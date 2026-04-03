@@ -14,7 +14,12 @@ import java.awt.GridLayout;
 import java.awt.LinearGradientPaint;
 import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.geom.RoundRectangle2D;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -39,6 +44,7 @@ public class game extends JFrame {
 	private static final String SCREEN_SELECT_MAP = "select-map";
 	private static final String SCREEN_BOARD_LEVEL1 = "board-level1";
 	private static final String SCREEN_BOARD_LEVEL2 = "board-level2";
+	private static final String SCREEN_BOARD_AI = "board-ai";
 
 	private final CardLayout cardLayout;
 	private final JPanel cardPanel;
@@ -68,6 +74,7 @@ public class game extends JFrame {
 		cardPanel.add(createSelectMapScreen(), SCREEN_SELECT_MAP);
 		cardPanel.add(createBoard1v1Screen(1), SCREEN_BOARD_LEVEL1);
 		cardPanel.add(createBoard1v1Screen(2), SCREEN_BOARD_LEVEL2);
+		cardPanel.add(createBoardAiScreen(), SCREEN_BOARD_AI);
 
 		GradientBackgroundPanel root = new GradientBackgroundPanel();
 		root.setLayout(new BorderLayout());
@@ -101,11 +108,11 @@ public class game extends JFrame {
 		oneVsOne.addActionListener((ActionEvent e) -> showScreen(SCREEN_PLAYERS));
 
 		JButton vsAi = createModeButton("Jouer contre IA");
-		vsAi.addActionListener((ActionEvent e) -> JOptionPane.showMessageDialog(
-				this,
-				"Mode IA selectionne.",
-				"Info",
-				JOptionPane.INFORMATION_MESSAGE));
+		vsAi.addActionListener((ActionEvent e) -> {
+			playerOneName = "Joueur 1";
+			playerTwoName = "IA";
+			showScreen(SCREEN_BOARD_AI);
+		});
 
 		JButton back = createButton("Retour accueil", ButtonStyle.SECONDARY);
 		back.addActionListener(e -> showScreen(SCREEN_HOME));
@@ -221,6 +228,32 @@ public class game extends JFrame {
 		card.setBorder(BorderFactory.createEmptyBorder(24, 30, 24, 30));
 
 		CheckersBoardPanel boardPanel = new CheckersBoardPanel(level);
+		boardPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+		JButton back = createButton("Retour au mode de jeu", ButtonStyle.SECONDARY);
+		back.addActionListener(e -> showScreen(SCREEN_PLAY));
+
+		card.add(Box.createVerticalStrut(8));
+		card.add(boardPanel);
+		card.add(Box.createVerticalStrut(16));
+		card.add(back);
+
+		return wrapCentered(card);
+	}
+
+	private JPanel createBoardAiScreen() {
+		RoundedPanel card = new RoundedPanel(
+				new Color(245, 234, 206, 28),
+				new Color(247, 184, 68, 128),
+				1f,
+				24);
+		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+		card.setPreferredSize(new Dimension(760, 650));
+		card.setMinimumSize(new Dimension(620, 560));
+		card.setMaximumSize(new Dimension(1400, 1200));
+		card.setBorder(BorderFactory.createEmptyBorder(24, 30, 24, 30));
+
+		CheckersBoardPanel boardPanel = new CheckersBoardPanel(1, true);
 		boardPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
 		JButton back = createButton("Retour au mode de jeu", ButtonStyle.SECONDARY);
@@ -525,8 +558,21 @@ public class game extends JFrame {
 		private final int boardSize;
 		private final char[][] pieces;
 		private final int level;
+		private final boolean aiOpponent;
+		private final Random random = new Random();
+		private int xOffset;
+		private int yOffset;
+		private int cell;
+		private int selectedRow = -1;
+		private int selectedCol = -1;
+		private char currentTurn = 'b';
+		private boolean gameOver = false;
 
 		CheckersBoardPanel(int level) {
+			this(level, false);
+		}
+
+		CheckersBoardPanel(int level, boolean aiOpponent) {
 			setOpaque(false);
 			this.boardSize = 10;
 			int baseSize = 520;
@@ -534,7 +580,174 @@ public class game extends JFrame {
 			setMinimumSize(new Dimension(340, 340));
 			setMaximumSize(new Dimension(760, 760));
 			this.level = level;
+			this.aiOpponent = aiOpponent;
 			this.pieces = createInitialPosition();
+
+			if (aiOpponent) {
+				addMouseListener(new MouseAdapter() {
+					@Override
+					public void mouseClicked(MouseEvent e) {
+						handleHumanClick(e.getX(), e.getY());
+					}
+				});
+			}
+		}
+
+		private void handleHumanClick(int mouseX, int mouseY) {
+			if (!aiOpponent || gameOver || currentTurn != 'b' || cell <= 0) {
+				return;
+			}
+
+			int col = (mouseX - xOffset) / cell;
+			int row = (mouseY - yOffset) / cell;
+			if (!isInside(row, col)) {
+				return;
+			}
+
+			if (selectedRow == -1) {
+				if (pieces[row][col] == 'b') {
+					selectedRow = row;
+					selectedCol = col;
+					repaint();
+				}
+				return;
+			}
+
+			if (row == selectedRow && col == selectedCol) {
+				selectedRow = -1;
+				selectedCol = -1;
+				repaint();
+				return;
+			}
+
+			if (pieces[row][col] == 'b') {
+				selectedRow = row;
+				selectedCol = col;
+				repaint();
+				return;
+			}
+
+			if (tryMove(selectedRow, selectedCol, row, col, 'b')) {
+				selectedRow = -1;
+				selectedCol = -1;
+				currentTurn = 'r';
+				repaint();
+				if (checkGameOver()) {
+					return;
+				}
+
+				SwingUtilities.invokeLater(() -> {
+					playAiTurn();
+					repaint();
+					checkGameOver();
+				});
+			}
+		}
+
+		private void playAiTurn() {
+			if (!aiOpponent || gameOver || currentTurn != 'r') {
+				return;
+			}
+
+			List<Move> captures = getAllMoves('r', true);
+			List<Move> normals = captures.isEmpty() ? getAllMoves('r', false) : captures;
+			if (normals.isEmpty()) {
+				gameOver = true;
+				return;
+			}
+
+			Move choice = normals.get(random.nextInt(normals.size()));
+			applyMove(choice, 'r');
+			currentTurn = 'b';
+		}
+
+		private boolean checkGameOver() {
+			if (!aiOpponent || gameOver) {
+				return gameOver;
+			}
+
+			boolean blackHasMoves = !getAllMoves('b', false).isEmpty() || !getAllMoves('b', true).isEmpty();
+			boolean redHasMoves = !getAllMoves('r', false).isEmpty() || !getAllMoves('r', true).isEmpty();
+
+			if (!blackHasMoves || !redHasMoves) {
+				gameOver = true;
+				String winner = blackHasMoves ? "Joueur" : "IA";
+				JOptionPane.showMessageDialog(this, winner + " gagne la partie.", "Partie terminee", JOptionPane.INFORMATION_MESSAGE);
+				return true;
+			}
+			return false;
+		}
+
+		private boolean tryMove(int fromRow, int fromCol, int toRow, int toCol, char piece) {
+			for (Move move : getMovesForPiece(fromRow, fromCol, piece, true)) {
+				if (move.toRow == toRow && move.toCol == toCol) {
+					applyMove(move, piece);
+					return true;
+				}
+			}
+
+			if (!getAllMoves(piece, true).isEmpty()) {
+				return false;
+			}
+
+			for (Move move : getMovesForPiece(fromRow, fromCol, piece, false)) {
+				if (move.toRow == toRow && move.toCol == toCol) {
+					applyMove(move, piece);
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		private void applyMove(Move move, char piece) {
+			pieces[move.fromRow][move.fromCol] = '.';
+			pieces[move.toRow][move.toCol] = piece;
+			if (move.isCapture) {
+				pieces[move.capturedRow][move.capturedCol] = '.';
+			}
+		}
+
+		private List<Move> getAllMoves(char piece, boolean captureOnly) {
+			List<Move> moves = new ArrayList<>();
+			for (int row = 0; row < boardSize; row++) {
+				for (int col = 0; col < boardSize; col++) {
+					if (pieces[row][col] == piece) {
+						moves.addAll(getMovesForPiece(row, col, piece, captureOnly));
+					}
+				}
+			}
+			return moves;
+		}
+
+		private List<Move> getMovesForPiece(int row, int col, char piece, boolean captureOnly) {
+			List<Move> moves = new ArrayList<>();
+			int direction = piece == 'b' ? 1 : -1;
+			char opponent = piece == 'b' ? 'r' : 'b';
+
+			int[] dCols = { -1, 1 };
+			for (int dCol : dCols) {
+				int nextRow = row + direction;
+				int nextCol = col + dCol;
+				if (!captureOnly && isInside(nextRow, nextCol) && pieces[nextRow][nextCol] == '.') {
+					moves.add(new Move(row, col, nextRow, nextCol));
+				}
+
+				int jumpRow = row + (2 * direction);
+				int jumpCol = col + (2 * dCol);
+				if (isInside(jumpRow, jumpCol)
+						&& isInside(nextRow, nextCol)
+						&& pieces[nextRow][nextCol] == opponent
+						&& pieces[jumpRow][jumpCol] == '.') {
+					moves.add(new Move(row, col, jumpRow, jumpCol, nextRow, nextCol));
+				}
+			}
+
+			return moves;
+		}
+
+		private boolean isInside(int row, int col) {
+			return row >= 0 && row < boardSize && col >= 0 && col < boardSize;
 		}
 
 		private char[][] createInitialPosition() {
@@ -589,9 +802,9 @@ public class game extends JFrame {
 
 			int available = Math.max(boardSize, Math.min(getWidth(), getHeight()) - 26);
 			int boardPixels = (available / boardSize) * boardSize;
-			int xOffset = (getWidth() - boardPixels) / 2;
-			int yOffset = (getHeight() - boardPixels) / 2;
-			int cell = boardPixels / boardSize;
+			xOffset = (getWidth() - boardPixels) / 2;
+			yOffset = (getHeight() - boardPixels) / 2;
+			cell = boardPixels / boardSize;
 
 			Color light, dark;
 			if (level == 2) {
@@ -629,6 +842,11 @@ public class game extends JFrame {
 					g2.setColor((row + col) % 2 == 0 ? light : dark);
 					g2.fillRect(x, y, cell, cell);
 
+					if (aiOpponent && row == selectedRow && col == selectedCol) {
+						g2.setColor(new Color(255, 210, 86, 140));
+						g2.fillRect(x, y, cell, cell);
+					}
+
 					char piece = pieces[row][col];
 					if (piece == 'r' || piece == 'b') {
 						int margin = Math.max(6, cell / 7);
@@ -655,6 +873,30 @@ public class game extends JFrame {
 			g2.drawRect(xOffset, yOffset, boardPixels, boardPixels);
 
 			g2.dispose();
+		}
+
+		private static class Move {
+			private final int fromRow;
+			private final int fromCol;
+			private final int toRow;
+			private final int toCol;
+			private final boolean isCapture;
+			private final int capturedRow;
+			private final int capturedCol;
+
+			Move(int fromRow, int fromCol, int toRow, int toCol) {
+				this(fromRow, fromCol, toRow, toCol, -1, -1);
+			}
+
+			Move(int fromRow, int fromCol, int toRow, int toCol, int capturedRow, int capturedCol) {
+				this.fromRow = fromRow;
+				this.fromCol = fromCol;
+				this.toRow = toRow;
+				this.toCol = toCol;
+				this.capturedRow = capturedRow;
+				this.capturedCol = capturedCol;
+				this.isCapture = capturedRow >= 0;
+			}
 		}
 	}
 }
