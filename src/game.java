@@ -561,6 +561,9 @@ public class game extends JFrame {
 		private int selectedRow = -1;
 		private int selectedCol = -1;
 		private java.util.List<Move> legalMoves = new java.util.ArrayList<>();
+		private int xOffset;
+		private int yOffset;
+		private int cell;
 
 		CheckersBoardPanel(int level) {
 			this(level, false);
@@ -590,9 +593,9 @@ public class game extends JFrame {
 			// Calculer les dimensions du plateau
 			int available = Math.max(boardSize, Math.min(getWidth(), getHeight()) - 26);
 			int boardPixels = (available / boardSize) * boardSize;
-			int xOffset = (getWidth() - boardPixels) / 2;
-			int yOffset = (getHeight() - boardPixels) / 2;
-			int cell = boardPixels / boardSize;
+			xOffset = (getWidth() - boardPixels) / 2;
+			yOffset = (getHeight() - boardPixels) / 2;
+			cell = boardPixels / boardSize;
 			
 			int col = (e.getX() - xOffset) / cell;
 			int row = (e.getY() - yOffset) / cell;
@@ -734,30 +737,6 @@ public class game extends JFrame {
 			g2.drawRect(xOffset, yOffset, boardPixels, boardPixels);
 
 			g2.dispose();
-		}
-
-		private static class Move {
-			private final int fromRow;
-			private final int fromCol;
-			private final int toRow;
-			private final int toCol;
-			private final boolean isCapture;
-			private final int capturedRow;
-			private final int capturedCol;
-
-			Move(int fromRow, int fromCol, int toRow, int toCol) {
-				this(fromRow, fromCol, toRow, toCol, -1, -1);
-			}
-
-			Move(int fromRow, int fromCol, int toRow, int toCol, int capturedRow, int capturedCol) {
-				this.fromRow = fromRow;
-				this.fromCol = fromCol;
-				this.toRow = toRow;
-				this.toCol = toCol;
-				this.capturedRow = capturedRow;
-				this.capturedCol = capturedCol;
-				this.isCapture = capturedRow >= 0;
-			}
 		}
 	}
 }
