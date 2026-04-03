@@ -163,17 +163,11 @@ public class game extends JFrame {
 		JPanel mapsGrid = new JPanel(new GridLayout(1, 2, 18, 18));
 		mapsGrid.setOpaque(false);
 		mapsGrid.add(createMapPreview(
-				"Arene facile",
-				"Plateau 10x10 avec 4 rangs de pions par joueur.",
 				1,
-				SCREEN_BOARD_LEVEL1,
-				SCREEN_PLAY));
+				SCREEN_BOARD_LEVEL1));
 		mapsGrid.add(createMapPreview(
-				"Arene difficile",
-				"Plateau classique 8x8 plus compact.",
 				2,
-				SCREEN_BOARD_LEVEL2,
-				SCREEN_PLAY));
+				SCREEN_BOARD_LEVEL2));
 		card.add(mapsGrid);
 		card.add(Box.createVerticalStrut(14));
 		card.add(back);
@@ -181,7 +175,7 @@ public class game extends JFrame {
 		return wrapCentered(card);
 	}
 
-	private JPanel createMapPreview(String title, String description, int level, String targetScreen, String backScreen) {
+	private JPanel createMapPreview(int level, String targetScreen) {
 		RoundedPanel preview = new RoundedPanel(
 				new Color(24, 18, 12, 225),
 				new Color(247, 184, 68, 180),
@@ -189,18 +183,6 @@ public class game extends JFrame {
 				20);
 		preview.setLayout(new BoxLayout(preview, BoxLayout.Y_AXIS));
 		preview.setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
-
-		JLabel previewTitle = new JLabel(title, SwingConstants.CENTER);
-		previewTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
-		previewTitle.setForeground(new Color(249, 242, 220));
-		previewTitle.setFont(new Font("SansSerif", Font.BOLD, 20));
-
-		JLabel previewDescription = new JLabel(
-				"<html><div style='text-align:center; width:220px;'>" + description + "</div></html>",
-				SwingConstants.CENTER);
-		previewDescription.setAlignmentX(Component.CENTER_ALIGNMENT);
-		previewDescription.setForeground(new Color(216, 203, 168));
-		previewDescription.setFont(new Font("SansSerif", Font.PLAIN, 13));
 
 		CheckersBoardPanel previewBoard = new CheckersBoardPanel(level);
 		previewBoard.setPreferredSize(new Dimension(level == 1 ? 220 : 170, level == 1 ? 220 : 170));
@@ -211,10 +193,7 @@ public class game extends JFrame {
 		choose.setMaximumSize(new Dimension(180, 46));
 		choose.addActionListener((ActionEvent e) -> showScreen(targetScreen));
 
-		preview.add(previewTitle);
 		preview.add(Box.createVerticalStrut(8));
-		preview.add(previewDescription);
-		preview.add(Box.createVerticalStrut(12));
 		preview.add(previewBoard);
 		preview.add(Box.createVerticalStrut(12));
 		preview.add(choose);
@@ -230,8 +209,16 @@ public class game extends JFrame {
 	}
 
 	private JPanel createBoard1v1Screen(int level) {
-		String levelText = level == 1 ? "Arene facile" : "Arene difficile";
-		RoundedPanel card = createCardBase("1v1", levelText, playerOneName + " contre " + playerTwoName);
+		RoundedPanel card = new RoundedPanel(
+				new Color(245, 234, 206, 28),
+				new Color(247, 184, 68, 128),
+				1f,
+				24);
+		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+		card.setPreferredSize(new Dimension(760, 650));
+		card.setMinimumSize(new Dimension(620, 560));
+		card.setMaximumSize(new Dimension(1400, 1200));
+		card.setBorder(BorderFactory.createEmptyBorder(24, 30, 24, 30));
 
 		CheckersBoardPanel boardPanel = new CheckersBoardPanel(level);
 		boardPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -239,9 +226,9 @@ public class game extends JFrame {
 		JButton back = createButton("Retour au mode de jeu", ButtonStyle.SECONDARY);
 		back.addActionListener(e -> showScreen(SCREEN_PLAY));
 
-		card.add(Box.createVerticalStrut(14));
+		card.add(Box.createVerticalStrut(8));
 		card.add(boardPanel);
-		card.add(Box.createVerticalStrut(14));
+		card.add(Box.createVerticalStrut(16));
 		card.add(back);
 
 		return wrapCentered(card);
@@ -541,8 +528,8 @@ public class game extends JFrame {
 
 		CheckersBoardPanel(int level) {
 			setOpaque(false);
-			this.boardSize = level == 1 ? 10 : 8;
-			int baseSize = level == 1 ? 520 : 420;
+			this.boardSize = 10;
+			int baseSize = 520;
 			setPreferredSize(new Dimension(baseSize, baseSize));
 			setMinimumSize(new Dimension(340, 340));
 			setMaximumSize(new Dimension(760, 760));
@@ -583,7 +570,7 @@ public class game extends JFrame {
 					}
 				}
 
-				for (int row = 4; row < boardSize; row++) {
+				for (int row = boardSize - 4; row < boardSize; row++) {
 					for (int col = 0; col < boardSize; col++) {
 						if ((row + col) % 2 == 1) {
 							grid[row][col] = 'r';
@@ -646,7 +633,15 @@ public class game extends JFrame {
 					if (piece == 'r' || piece == 'b') {
 						int margin = Math.max(6, cell / 7);
 						int d = cell - (2 * margin);
-						g2.setColor(piece == 'r' ? new Color(208, 58, 46) : new Color(32, 32, 32));
+						Color pieceColor;
+						if (piece == 'b' && level == 1 && row < boardSize / 2) {
+							pieceColor = Color.BLACK;
+						} else if (piece == 'r') {
+							pieceColor = new Color(208, 58, 46);
+						} else {
+							pieceColor = new Color(32, 32, 32);
+						}
+						g2.setColor(pieceColor);
 						g2.fillOval(x + margin, y + margin, d, d);
 						g2.setColor(new Color(250, 236, 206, 180));
 						g2.setStroke(new BasicStroke(2f));
