@@ -663,10 +663,17 @@ public class game extends JFrame {
 				}
 			}
 
-			plateau.executeMove(selected);
-			selectedRow = -1;
-			selectedCol = -1;
-			legalMoves.clear();
+			// Ajouter un délai pour ralentir l'IA (3 secondes)
+			final Move finalSelected = selected;
+			javax.swing.Timer delayTimer = new javax.swing.Timer(3000, e -> {
+				plateau.executeMove(finalSelected);
+				selectedRow = -1;
+				selectedCol = -1;
+				legalMoves.clear();
+				repaint();
+			});
+			delayTimer.setRepeats(false);
+			delayTimer.start();
 		}
 
 		private char[][] createInitialPosition() {
