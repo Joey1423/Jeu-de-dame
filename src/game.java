@@ -274,7 +274,7 @@ public class game extends JFrame {
 		card.setMaximumSize(new Dimension(1400, 1200));
 		card.setBorder(BorderFactory.createEmptyBorder(24, 30, 24, 30));
 
-		CheckersBoardPanel boardPanel = new CheckersBoardPanel(level);
+		CheckersBoardPanel boardPanel = new CheckersBoardPanel(level, false, this);
 		boardPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
 		String redName = playerOneName;
@@ -284,8 +284,24 @@ public class game extends JFrame {
 		JLabel turnLabel = createStatusLabel("Au tour de " + redName);
 		boardPanel.bindStatusLabels(turnLabel, redName, blackName);
 
+		JButton abandonButton = createButton("Abandonner", ButtonStyle.SECONDARY);
+		abandonButton.addActionListener(e -> {
+			int result = JOptionPane.showConfirmDialog(this, "Êtes-vous sûr d'abandonner?", "Confirmation", JOptionPane.YES_NO_OPTION);
+			if (result == JOptionPane.YES_OPTION) {
+				boardPanel.resetGame();
+				showScreen(SCREEN_HOME);
+			}
+		});
+
 		JButton back = createButton("Retour au mode de jeu", ButtonStyle.SECONDARY);
 		back.addActionListener(e -> showScreen(SCREEN_PLAY));
+
+		JPanel buttonPanel = new JPanel();
+		buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
+		buttonPanel.setOpaque(false);
+		buttonPanel.add(abandonButton);
+		buttonPanel.add(Box.createHorizontalStrut(12));
+		buttonPanel.add(back);
 
 		card.add(Box.createVerticalStrut(8));
 		card.add(playersLabel);
@@ -294,7 +310,7 @@ public class game extends JFrame {
 		card.add(Box.createVerticalStrut(10));
 		card.add(boardPanel);
 		card.add(Box.createVerticalStrut(16));
-		card.add(back);
+		card.add(buttonPanel);
 
 		return wrapCentered(card);
 	}
@@ -311,21 +327,38 @@ public class game extends JFrame {
 		card.setMaximumSize(new Dimension(1400, 1200));
 		card.setBorder(BorderFactory.createEmptyBorder(24, 30, 24, 30));
 
-		CheckersBoardPanel boardPanel = new CheckersBoardPanel(1, true);
+		CheckersBoardPanel boardPanel = new CheckersBoardPanel(1, true, this);
 		boardPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+		boardAiScreen = card;
 
 		JLabel turnLabel = createStatusLabel("A toi de jouer");
 		boardPanel.bindStatusLabels(turnLabel, "Toi", "IA");
 
+		JButton abandonButton = createButton("Abandonner", ButtonStyle.SECONDARY);
+		abandonButton.addActionListener(e -> {
+			int result = JOptionPane.showConfirmDialog(this, "Êtes-vous sûr d'abandonner?", "Confirmation", JOptionPane.YES_NO_OPTION);
+			if (result == JOptionPane.YES_OPTION) {
+				boardPanel.resetGame();
+				showScreen(SCREEN_HOME);
+			}
+		});
+
 		JButton back = createButton("Retour au mode de jeu", ButtonStyle.SECONDARY);
 		back.addActionListener(e -> showScreen(SCREEN_PLAY));
+
+		JPanel buttonPanel = new JPanel();
+		buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
+		buttonPanel.setOpaque(false);
+		buttonPanel.add(abandonButton);
+		buttonPanel.add(Box.createHorizontalStrut(12));
+		buttonPanel.add(back);
 
 		card.add(Box.createVerticalStrut(8));
 		card.add(turnLabel);
 		card.add(Box.createVerticalStrut(10));
 		card.add(boardPanel);
 		card.add(Box.createVerticalStrut(16));
-		card.add(back);
+		card.add(buttonPanel);
 
 		return wrapCentered(card);
 	}
@@ -550,6 +583,10 @@ public class game extends JFrame {
 		cardLayout.show(cardPanel, screen);
 	}
 
+	public void goToHome() {
+		showScreen(SCREEN_HOME);
+	}
+
 	public static void main(String[] args) {
 		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -631,6 +668,7 @@ public class game extends JFrame {
 		private final int level;
 		private final boolean aiOpponent;
 		private final Random random = new Random();
+		private final game gameFrame;
 		private JLabel turnLabel;
 		private String redPlayerName = "Rouge";
 		private String blackPlayerName = "Noir";
@@ -642,10 +680,14 @@ public class game extends JFrame {
 		private int cell;
 
 		CheckersBoardPanel(int level) {
-			this(level, false);
+			this(level, false, null);
 		}
 
 		CheckersBoardPanel(int level, boolean aiOpponent) {
+			this(level, aiOpponent, null);
+		}
+
+		CheckersBoardPanel(int level, boolean aiOpponent, game gameFrame) {
 			setOpaque(false);
 			this.boardSize = 10;
 			int baseSize = 520;
@@ -654,6 +696,7 @@ public class game extends JFrame {
 			setMaximumSize(new Dimension(760, 760));
 			this.level = level;
 			this.aiOpponent = aiOpponent;
+			this.gameFrame = gameFrame;
 			this.plateau = new Plateau();
 			updateStatusDisplay();
 			
@@ -727,6 +770,17 @@ public class game extends JFrame {
 					}
 				}
 				if (moveFound) {
+					// Vérifier si le joueur suivant a encore des coups
+					List<Move> nextMoves = plateau.getLegalMoves();
+					if (nextMoves.isEmpty()) {
+						// Le joueur actuel gagne car l'adversaire n'a pas de coups
+						String winner = plateau.getCurrentPlayer() == 'r' ? redPlayerName : blackPlayerName;
+						showGameOver(winner);
+						repaint();
+						return;
+					}
+
+					// Si l'IA joue contre un joueur
 					if (aiOpponent) {
 						playAiTurn();
 					}
@@ -754,6 +808,8 @@ public class game extends JFrame {
 
 			List<Move> moves = plateau.getLegalMoves();
 			if (moves.isEmpty()) {
+				// L'IA n'a plus de mouvements, le joueur gagne
+				showGameOver("Joueur");
 				return;
 			}
 
@@ -773,9 +829,45 @@ public class game extends JFrame {
 				selectedCol = -1;
 				legalMoves.clear();
 				repaint();
+				
+				// Vérifier si le joueur a encore des coups
+				List<Move> playerMoves = plateau.getLegalMoves();
+				if (playerMoves.isEmpty()) {
+					showGameOver("IA");
+				}
 			});
 			delayTimer.setRepeats(false);
 			delayTimer.start();
+		}
+
+		private void showGameOver(String winner) {
+			String message;
+			if (aiOpponent) {
+				message = winner.equals("Joueur") ? "🎉 Vous avez gagné! 🎉" : "💀 L'IA a gagné! 💀";
+			} else {
+				message = "🎉 " + winner + " a gagné! 🎉";
+			}
+			JOptionPane.showMessageDialog(this, message, "Fin de la partie", JOptionPane.INFORMATION_MESSAGE);
+			resetGame();
+		}
+
+		private void resetGame() {
+			plateau.resetPlateau();
+			selectedRow = -1;
+			selectedCol = -1;
+			legalMoves.clear();
+			updateStatusDisplay();
+			repaint();
+		}
+
+		public void playerAbandons() {
+			int result = JOptionPane.showConfirmDialog(this, "Êtes-vous sûr d'abandonner?", "Confirmation", JOptionPane.YES_NO_OPTION);
+			if (result == JOptionPane.YES_OPTION) {
+				resetGame();
+				if (gameFrame != null) {
+					gameFrame.goToHome();
+				}
+			}
 		}
 
 		private char[][] createInitialPosition() {

@@ -11,6 +11,11 @@ public class Plateau {
 		this.currentPlayer = 'r'; // Red starts
 	}
 
+	public void resetPlateau() {
+		this.board = initializeBoard();
+		this.currentPlayer = 'r';
+	}
+
 	private char[][] initializeBoard() {
 		char[][] grid = new char[BOARD_SIZE][BOARD_SIZE];
 		for (int row = 0; row < BOARD_SIZE; row++) {
