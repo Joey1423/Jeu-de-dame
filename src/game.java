@@ -48,6 +48,10 @@ public class game extends JFrame {
 
 	private final CardLayout cardLayout;
 	private final JPanel cardPanel;
+	private JPanel selectMapScreen;
+	private JPanel boardLevel1Screen;
+	private JPanel boardLevel2Screen;
+	private JPanel boardAiScreen;
 	private String playerOneName = "Joueur 1";
 	private String playerTwoName = "Joueur 2";
 
@@ -71,10 +75,16 @@ public class game extends JFrame {
 		cardPanel.add(createPlayScreen(), SCREEN_PLAY);
 		cardPanel.add(createPlayersScreen(), SCREEN_PLAYERS);
 		cardPanel.add(createRulesScreen(), SCREEN_RULES);
-		cardPanel.add(createSelectMapScreen(), SCREEN_SELECT_MAP);
-		cardPanel.add(createBoard1v1Screen(1), SCREEN_BOARD_LEVEL1);
-		cardPanel.add(createBoard1v1Screen(2), SCREEN_BOARD_LEVEL2);
-		cardPanel.add(createBoardAiScreen(), SCREEN_BOARD_AI);
+
+		selectMapScreen = createSelectMapScreen();
+		boardLevel1Screen = createBoard1v1Screen(1);
+		boardLevel2Screen = createBoard1v1Screen(2);
+		boardAiScreen = createBoardAiScreen();
+
+		cardPanel.add(selectMapScreen, SCREEN_SELECT_MAP);
+		cardPanel.add(boardLevel1Screen, SCREEN_BOARD_LEVEL1);
+		cardPanel.add(boardLevel2Screen, SCREEN_BOARD_LEVEL2);
+		cardPanel.add(boardAiScreen, SCREEN_BOARD_AI);
 
 		GradientBackgroundPanel root = new GradientBackgroundPanel();
 		root.setLayout(new BorderLayout());
@@ -109,8 +119,11 @@ public class game extends JFrame {
 
 		JButton vsAi = createModeButton("Jouer contre IA");
 		vsAi.addActionListener((ActionEvent e) -> {
-			playerOneName = "Joueur 1";
+			if (playerOneName == null || playerOneName.trim().isEmpty()) {
+				playerOneName = "Joueur 1";
+			}
 			playerTwoName = "IA";
+			refreshAiScreen();
 			showScreen(SCREEN_BOARD_AI);
 		});
 
@@ -146,6 +159,7 @@ public class game extends JFrame {
 
 			playerOneName = first.isEmpty() ? "Joueur 1" : first;
 			playerTwoName = second.isEmpty() ? "Joueur 2" : second;
+			refreshNamedScreens();
 			showScreen(SCREEN_SELECT_MAP);
 		});
 
@@ -157,6 +171,39 @@ public class game extends JFrame {
 		card.add(back);
 
 		return wrapCentered(card);
+	}
+
+	private void refreshNamedScreens() {
+		if (selectMapScreen != null) {
+			cardPanel.remove(selectMapScreen);
+		}
+		if (boardLevel1Screen != null) {
+			cardPanel.remove(boardLevel1Screen);
+		}
+		if (boardLevel2Screen != null) {
+			cardPanel.remove(boardLevel2Screen);
+		}
+
+		selectMapScreen = createSelectMapScreen();
+		boardLevel1Screen = createBoard1v1Screen(1);
+		boardLevel2Screen = createBoard1v1Screen(2);
+
+		cardPanel.add(selectMapScreen, SCREEN_SELECT_MAP);
+		cardPanel.add(boardLevel1Screen, SCREEN_BOARD_LEVEL1);
+		cardPanel.add(boardLevel2Screen, SCREEN_BOARD_LEVEL2);
+		cardPanel.revalidate();
+		cardPanel.repaint();
+	}
+
+	private void refreshAiScreen() {
+		if (boardAiScreen != null) {
+			cardPanel.remove(boardAiScreen);
+		}
+
+		boardAiScreen = createBoardAiScreen();
+		cardPanel.add(boardAiScreen, SCREEN_BOARD_AI);
+		cardPanel.revalidate();
+		cardPanel.repaint();
 	}
 
 	private JPanel createSelectMapScreen() {
@@ -230,10 +277,21 @@ public class game extends JFrame {
 		CheckersBoardPanel boardPanel = new CheckersBoardPanel(level);
 		boardPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
+		String redName = playerOneName;
+		String blackName = playerTwoName;
+		JLabel playersLabel = createStatusLabel(redName + " (Rouge) vs " + blackName + " (Noir)");
+
+		JLabel turnLabel = createStatusLabel("Au tour de " + redName);
+		boardPanel.bindStatusLabels(turnLabel, redName, blackName);
+
 		JButton back = createButton("Retour au mode de jeu", ButtonStyle.SECONDARY);
 		back.addActionListener(e -> showScreen(SCREEN_PLAY));
 
 		card.add(Box.createVerticalStrut(8));
+		card.add(playersLabel);
+		card.add(Box.createVerticalStrut(6));
+		card.add(turnLabel);
+		card.add(Box.createVerticalStrut(10));
 		card.add(boardPanel);
 		card.add(Box.createVerticalStrut(16));
 		card.add(back);
@@ -256,10 +314,15 @@ public class game extends JFrame {
 		CheckersBoardPanel boardPanel = new CheckersBoardPanel(1, true);
 		boardPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
+		JLabel turnLabel = createStatusLabel("A toi de jouer");
+		boardPanel.bindStatusLabels(turnLabel, "Toi", "IA");
+
 		JButton back = createButton("Retour au mode de jeu", ButtonStyle.SECONDARY);
 		back.addActionListener(e -> showScreen(SCREEN_PLAY));
 
 		card.add(Box.createVerticalStrut(8));
+		card.add(turnLabel);
+		card.add(Box.createVerticalStrut(10));
 		card.add(boardPanel);
 		card.add(Box.createVerticalStrut(16));
 		card.add(back);
@@ -431,6 +494,14 @@ public class game extends JFrame {
 		return button;
 	}
 
+	private JLabel createStatusLabel(String text) {
+		JLabel label = new JLabel(text, SwingConstants.CENTER);
+		label.setAlignmentX(Component.CENTER_ALIGNMENT);
+		label.setForeground(new Color(249, 242, 220));
+		label.setFont(new Font("SansSerif", Font.BOLD, 16));
+		return label;
+	}
+
 	private JTextField createNameField(String placeholder) {
 		JTextField field = new JTextField(20);
 		field.setMaximumSize(new Dimension(340, 44));
@@ -560,6 +631,9 @@ public class game extends JFrame {
 		private final int level;
 		private final boolean aiOpponent;
 		private final Random random = new Random();
+		private JLabel turnLabel;
+		private String redPlayerName = "Rouge";
+		private String blackPlayerName = "Noir";
 		private int selectedRow = -1;
 		private int selectedCol = -1;
 		private java.util.List<Move> legalMoves = new java.util.ArrayList<>();
@@ -581,6 +655,7 @@ public class game extends JFrame {
 			this.level = level;
 			this.aiOpponent = aiOpponent;
 			this.plateau = new Plateau();
+			updateStatusDisplay();
 			
 			// Ajouter listener pour les clics
 			addMouseListener(new java.awt.event.MouseAdapter() {
@@ -589,6 +664,31 @@ public class game extends JFrame {
 					handleBoardClick(e);
 				}
 			});
+		}
+
+		void bindStatusLabels(JLabel turnLabel, String redPlayerName, String blackPlayerName) {
+			this.turnLabel = turnLabel;
+			this.redPlayerName = redPlayerName;
+			this.blackPlayerName = blackPlayerName;
+			updateStatusDisplay();
+		}
+
+		private void updateStatusDisplay() {
+			if (turnLabel == null) {
+				return;
+			}
+
+			char current = plateau.getCurrentPlayer();
+			if (aiOpponent) {
+				if (current == 'r') {
+					turnLabel.setText("A toi de jouer (" + redPlayerName + ")");
+				} else {
+					turnLabel.setText("Tour de l'IA (" + blackPlayerName + ")");
+				}
+			} else {
+				String currentName = current == 'r' ? redPlayerName : blackPlayerName;
+				turnLabel.setText("Au tour de " + currentName);
+			}
 		}
 
 		
@@ -618,6 +718,7 @@ public class game extends JFrame {
 				for (Move move : legalMoves) {
 					if (move.toRow == row && move.toCol == col) {
 						plateau.executeMove(move);
+						updateStatusDisplay();
 						moveFound = true;
 						selectedRow = -1;
 						selectedCol = -1;
@@ -667,6 +768,7 @@ public class game extends JFrame {
 			final Move finalSelected = selected;
 			javax.swing.Timer delayTimer = new javax.swing.Timer(3000, e -> {
 				plateau.executeMove(finalSelected);
+				updateStatusDisplay();
 				selectedRow = -1;
 				selectedCol = -1;
 				legalMoves.clear();

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="503c6769-d5ca-4159-8d92-317749da03a8" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/src/Move.class" beforeDir="false" afterPath="$PROJECT_DIR$/src/Move.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Move.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/bot.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/bot.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/plateau.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/plateau.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/player.java" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 7
+}]]></component>
+  <component name="ProjectId" id="3BqwIocp44oT07uIpA1Djs4QWMr" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "main",
+    "ignore.virus.scanning.warn.message": "true",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/sport/iCloudDrive/Ynov/JAVA/Jeu-de-dame"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-30f59d01ecdd-2fc7cc6b9a17-intellij.indexing.shared.core-IU-253.31033.145" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="503c6769-d5ca-4159-8d92-317749da03a8" name="Changes" comment="" />
+      <created>1775229834742</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1775229834742</updated>
+    </task>
+    <servers />
+  </component>
+</project>
