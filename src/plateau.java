@@ -226,9 +226,16 @@ public class Plateau {
 
 	// ===== AFFICHER LE PLATEAU =====
 	public void display() {
-		System.out.println("   0 1 2 3 4 5 6 7 8 9");
+		// Afficher les lettres en haut
+		System.out.println("  a b c d e f g h i j");
+		// Afficher le plateau de haut en bas (10 à 1)
 		for (int row = 0; row < BOARD_SIZE; row++) {
-			System.out.print(row + " ");
+			int displayRow = BOARD_SIZE - row; // Afficher de 10 à 1
+			if (displayRow < 10) {
+				System.out.print(displayRow + " ");
+			} else {
+				System.out.print(displayRow);
+			}
 			for (int col = 0; col < BOARD_SIZE; col++) {
 				System.out.print(board[row][col] + " ");
 			}
