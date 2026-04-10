@@ -1,8 +1,11 @@
 import java.util.ArrayList;
 import java.util.List;
 
-public class Plateau {
+class Plateau {
 	private static final int BOARD_SIZE = 10;
+	private static final int[][] ALL_DIAGONALS = {{-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
+	private static final int[][] RED_FORWARD = {{-1, -1}, {-1, 1}};
+	private static final int[][] BLUE_FORWARD = {{1, -1}, {1, 1}};
 	private char[][] board;
 	private char currentPlayer;
 
@@ -44,131 +47,84 @@ public class Plateau {
 		return grid;
 	}
 
-	// ===== OBTENIR TOUS LES COUPS LEGAUX (REGLE: CAPTURES OBLIGATOIRES) =====
 	public List<Move> getLegalMoves() {
 		List<Move> captures = getCaptureMoves();
-		
-		// RÈGLE CRITIQUE: Si des captures existent, SEULES elles sont légales
-		if (!captures.isEmpty()) {
-			return captures;
-		}
-		
-		// Sinon, retourner les mouvements simples
-		return getSimpleMoves();
+		return captures.isEmpty() ? getSimpleMoves() : captures;
 	}
 
-	// ===== OBTENIR LES MOUVEMENTS SIMPLES =====
 	private List<Move> getSimpleMoves() {
 		List<Move> moves = new ArrayList<>();
-		
 		for (int row = 0; row < BOARD_SIZE; row++) {
 			for (int col = 0; col < BOARD_SIZE; col++) {
 				char piece = board[row][col];
-				if (piece == '.' || Character.toLowerCase(piece) != currentPlayer) {
+				if (!isCurrentPlayerPiece(piece)) {
 					continue;
 				}
-				
-				boolean isDame = Character.isUpperCase(piece);
-				
-				// Directions possibles
-				int[][] directions = isDame 
-					? new int[][] {{-1, -1}, {-1, 1}, {1, -1}, {1, 1}} // Dame: toutes les diagonales
-					: (currentPlayer == 'r' 
-						? new int[][] {{-1, -1}, {-1, 1}} // Rouge: vers le haut
-						: new int[][] {{1, -1}, {1, 1}}); // Bleu: vers le bas
-				
-				for (int[] dir : directions) {
+
+				for (int[] dir : directionsFor(piece)) {
 					int newRow = row + dir[0];
 					int newCol = col + dir[1];
-					
 					if (isValidPosition(newRow, newCol) && board[newRow][newCol] == '.') {
-						Move move = new Move(row, col, newRow, newCol);
-						moves.add(move);
+						moves.add(new Move(row, col, newRow, newCol));
 					}
 				}
 			}
 		}
-		
 		return moves;
 	}
 
-	// ===== OBTENIR LES CAPTURES OBLIGATOIRES =====
 	private List<Move> getCaptureMoves() {
 		List<Move> captures = new ArrayList<>();
-		
 		for (int row = 0; row < BOARD_SIZE; row++) {
 			for (int col = 0; col < BOARD_SIZE; col++) {
 				char piece = board[row][col];
-				if (piece == '.' || Character.toLowerCase(piece) != currentPlayer) {
+				if (!isCurrentPlayerPiece(piece)) {
 					continue;
 				}
-				
-				// Chercher les captures multiples pour ce pion
-				List<Move> startingCaptures = new ArrayList<>();
-				Move tempMove = new Move(row, col, row, col);
-				findAllCaptures(row, col, tempMove, startingCaptures);
-				
-				captures.addAll(startingCaptures);
+				List<Move> pieceCaptures = new ArrayList<>();
+				findAllCaptures(row, col, new Move(row, col, row, col), pieceCaptures);
+				captures.addAll(pieceCaptures);
 			}
 		}
-		
 		return captures;
 	}
 
-	// ===== TROUVE LES CAPTURES MULTIPLES (RECURSIF) =====
 	private void findAllCaptures(int row, int col, Move currentMove, List<Move> allCaptures) {
 		boolean foundFurther = false;
-		boolean isDame = Character.isUpperCase(board[row][col]);
-		
-		// Directions possibles pour capturer
-		int[][] directions = isDame 
-			? new int[][] {{-1, -1}, {-1, 1}, {1, -1}, {1, 1}}
-			: (currentPlayer == 'r' 
-				? new int[][] {{-1, -1}, {-1, 1}}
-				: new int[][] {{1, -1}, {1, 1}});
-		
-		for (int[] dir : directions) {
+		for (int[] dir : directionsFor(board[row][col])) {
 			int opponentRow = row + dir[0];
 			int opponentCol = col + dir[1];
 			int destRow = row + 2 * dir[0];
 			int destCol = col + 2 * dir[1];
-			
-			// Vérifie si la capture est possible
+
 			if (isValidPosition(opponentRow, opponentCol) && 
 				isValidPosition(destRow, destCol) &&
 				board[destRow][destCol] == '.' &&
 				isOpponentPiece(opponentRow, opponentCol)) {
-				
 				foundFurther = true;
-				
-				// Faire la capture temporairement
+
 				char capturedPiece = board[opponentRow][opponentCol];
 				board[opponentRow][opponentCol] = '.';
 				board[destRow][destCol] = board[row][col];
 				board[row][col] = '.';
-				
-				// Ajouter à la capture courante
+
 				int[] captured = {opponentRow, opponentCol};
 				currentMove.capturedPieces.add(captured);
 				currentMove.toRow = destRow;
 				currentMove.toCol = destCol;
-				
-				// Continuer la recherche récursive
+
 				findAllCaptures(destRow, destCol, currentMove, allCaptures);
-				
-				// Restaurer l'état
+
 				board[row][col] = board[destRow][destCol];
 				board[opponentRow][opponentCol] = capturedPiece;
 				board[destRow][destCol] = '.';
-				
-				// Retirer de la capture courante
+
 				currentMove.capturedPieces.remove(currentMove.capturedPieces.size() - 1);
 				currentMove.toRow = row;
 				currentMove.toCol = col;
 			}
 		}
-		
-		// Si aucune capture supplémentaire n'est trouvée, ajouter cette séquence
+
 		if (!foundFurther && !currentMove.capturedPieces.isEmpty()) {
 			Move completedMove = new Move(currentMove.fromRow, currentMove.fromCol, 
 										 currentMove.toRow, currentMove.toCol);
@@ -177,7 +133,17 @@ public class Plateau {
 		}
 	}
 
-	// ===== VERIFICATIONS UTILITAIRES =====
+	private int[][] directionsFor(char piece) {
+		if (Character.isUpperCase(piece)) {
+			return ALL_DIAGONALS;
+		}
+		return currentPlayer == 'r' ? RED_FORWARD : BLUE_FORWARD;
+	}
+
+	private boolean isCurrentPlayerPiece(char piece) {
+		return piece != '.' && Character.toLowerCase(piece) == currentPlayer;
+	}
+
 	private boolean isValidPosition(int row, int col) {
 		return row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE 
 			&& (row + col) % 2 == 1; // Case sombre
@@ -185,8 +151,7 @@ public class Plateau {
 
 	private boolean isOpponentPiece(int row, int col) {
 		char piece = board[row][col];
-		if (piece == '.') return false;
-		return Character.toLowerCase(piece) != currentPlayer;
+		return piece != '.' && Character.toLowerCase(piece) != currentPlayer;
 	}
 
 	// ===== EXECUTER UN MOUVEMENT =====
@@ -211,7 +176,6 @@ public class Plateau {
 		currentPlayer = (currentPlayer == 'r') ? 'b' : 'r';
 	}
 
-	// ===== GETTERS =====
 	public char[][] getBoard() {
 		return board;
 	}
@@ -224,13 +188,10 @@ public class Plateau {
 		this.currentPlayer = player;
 	}
 
-	// ===== AFFICHER LE PLATEAU =====
 	public void display() {
-		// Afficher les lettres en haut
 		System.out.println("  a b c d e f g h i j");
-		// Afficher le plateau de haut en bas (10 à 1)
 		for (int row = 0; row < BOARD_SIZE; row++) {
-			int displayRow = BOARD_SIZE - row; // Afficher de 10 à 1
+			int displayRow = BOARD_SIZE - row;
 			if (displayRow < 10) {
 				System.out.print(displayRow + " ");
 			} else {
