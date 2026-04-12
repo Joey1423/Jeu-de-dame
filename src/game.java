@@ -85,9 +85,9 @@ public class game extends JFrame { // fenetre principale
         RoundedPanel card = createCardBase("Mode de Jeu");
         JButton oneVsOne = createButton("1v1", ButtonStyle.SECONDARY);
         oneVsOne.addActionListener(e -> showScreen(SCREEN_PLAYERS));
-        JButton vsAi = createButton("Jouer contre IA", ButtonStyle.SECONDARY);
+        JButton vsAi = createButton("Jouer contre Bot", ButtonStyle.SECONDARY);
         vsAi.addActionListener(e -> {
-            playerTwoName = "IA";
+            playerTwoName = "Bot";
             refreshNamedScreens();
             showScreen(SCREEN_BOARD_AI);
         });
