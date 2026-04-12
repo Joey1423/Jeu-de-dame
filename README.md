@@ -1,20 +1,22 @@
 # Jeu de Dames
 
-Application Java Swing de jeu de dames avec interface graphique, selection du mode de jeu, choix des prenoms, choix d'arene et mode contre IA.
+Application Java Swing de jeu de dames avec interface graphique, choix des prenoms et choix d'arene.
 
 ## Apercu
 
-Le projet propose une interface simple et navigable pour lancer une partie de dames. L'objectif est de garder une base claire, facile a modifier, tout en gardant le code principal fonctionnel.
+Le projet propose une interface simple et navigable pour lancer une partie de dames. L'objectif est de garder une base claire, orientee objet, et facile a faire evoluer.
 
 ## Fonctionnalites
 
 - ecran d'accueil
 - selection du mode de jeu
-- mode 1v1
-- mode contre IA
+- mode 1v1 local
 - saisie des prenoms en 1v1
 - choix de map / arene
 - plateau de jeu 10x10
+- historique des deplacements
+- promotion en dame et deplacements/captures de dame
+- detection de fin de partie
 
 ## Pre-requis
 
@@ -26,7 +28,7 @@ Le projet propose une interface simple et navigable pour lancer une partie de da
 1. Compiler le projet :
 
 ```powershell
-javac -cp src -d src src/game.java src/Plateau.java
+javac -encoding UTF-8 src\*.java
 ```
 
 2. Lancer l'application :
@@ -37,12 +39,18 @@ java -cp src game
 
 ## Organisation
 
-Le projet est volontairement compact. Les fichiers principaux sont :
+Le projet est organise en couches simples. Les fichiers principaux sont :
 
 - `src/game.java` : interface Swing principale et ecrans du jeu
-- `src/Plateau.java` : logique du plateau, des coups et de la gestion des pions
+- `src/GameController.java` : controle des interactions de jeu (selection, coup, fin)
+- `src/plateau.java` : logique des regles, coups legaux, captures, tour
+- `src/Case.java` : case du plateau
+- `src/Piece.java` : classe abstraite de piece
+- `src/Pion.java` : piece standard
+- `src/Dame.java` : piece promue
+- `src/Joueur.java` : entite joueur (nom, couleur)
 
 ## Notes
 
-- La structure peut etre decoupee plus tard si tu veux separer l'interface, la logique et l'IA.
-- Le projet est pense pour rester simple a comprendre et a faire evoluer.
+- Le projet reste sans IA obligatoire.
+- La structure separe deja l'interface et la logique de jeu pour coller a une approche type MVC.

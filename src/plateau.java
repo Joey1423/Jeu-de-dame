@@ -1,228 +1,304 @@
-import java.util.ArrayList;
-import java.util.List;
+import java.util.ArrayList; // import liste dynamique
+import java.util.List; // import interface liste
 
-class Plateau {
-	private static final int BOARD_SIZE = 10;
-	private static final int[][] ALL_DIAGONALS = {{-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
-	private static final int[][] RED_FORWARD = {{-1, -1}, {-1, 1}};
-	private static final int[][] BLUE_FORWARD = {{1, -1}, {1, 1}};
-	private char[][] board;
-	private char currentPlayer;
+class Plateau { // classe plateau
+	private static final int BOARD_SIZE = 10; // taille 10x10
+	private static final int[][] ALL_DIAGONALS = {{-1, -1}, {-1, 1}, {1, -1}, {1, 1}}; // dirs dame
+	private static final int[][] RED_FORWARD = {{-1, -1}, {-1, 1}}; // dirs rouge
+	private static final int[][] BLUE_FORWARD = {{1, -1}, {1, 1}}; // dirs bleu
+	private Case[][] board; // grille objet
+	private char currentPlayer; // joueur courant
 
-	public Plateau() {
-		this.board = initializeBoard();
-		this.currentPlayer = 'r'; // Red starts
+	public Plateau() { // constructeur
+		this.board = initializeBoard(); // init grille
+		this.currentPlayer = 'r'; // rouge commence
 	}
 
-	public void resetPlateau() {
-		this.board = initializeBoard();
-		this.currentPlayer = 'r';
+	public void resetPlateau() { // reset partie
+		this.board = initializeBoard(); // reset grille
+		this.currentPlayer = 'r'; // reset tour
 	}
 
-	private char[][] initializeBoard() {
-		char[][] grid = new char[BOARD_SIZE][BOARD_SIZE];
-		for (int row = 0; row < BOARD_SIZE; row++) {
-			for (int col = 0; col < BOARD_SIZE; col++) {
-				grid[row][col] = '.';
+	private Case[][] initializeBoard() { // creer plateau initial
+		Case[][] grid = new Case[BOARD_SIZE][BOARD_SIZE]; // allouer grille
+		for (int row = 0; row < BOARD_SIZE; row++) { // boucle lignes
+			for (int col = 0; col < BOARD_SIZE; col++) { // boucle colonnes
+				grid[row][col] = new Case(); // case vide
 			}
 		}
 
-		// Place blue pieces (top)
-		for (int row = 0; row < 4; row++) {
-			for (int col = 0; col < BOARD_SIZE; col++) {
-				if ((row + col) % 2 == 1) {
-					grid[row][col] = 'b';
+		for (int row = 0; row < 4; row++) { // placer bleus haut
+			for (int col = 0; col < BOARD_SIZE; col++) { // boucle colonnes
+				if ((row + col) % 2 == 1) { // seulement case sombre
+					grid[row][col].setPiece(new Pion('b')); // pion bleu
 				}
 			}
 		}
 
-		// Place red pieces (bottom)
-		for (int row = BOARD_SIZE - 4; row < BOARD_SIZE; row++) {
-			for (int col = 0; col < BOARD_SIZE; col++) {
-				if ((row + col) % 2 == 1) {
-					grid[row][col] = 'r';
+		for (int row = BOARD_SIZE - 4; row < BOARD_SIZE; row++) { // placer rouges bas
+			for (int col = 0; col < BOARD_SIZE; col++) { // boucle colonnes
+				if ((row + col) % 2 == 1) { // seulement case sombre
+					grid[row][col].setPiece(new Pion('r')); // pion rouge
 				}
 			}
 		}
-		return grid;
+		return grid; // renvoyer grille
 	}
 
-	public List<Move> getLegalMoves() {
-		List<Move> captures = getCaptureMoves();
-		return captures.isEmpty() ? getSimpleMoves() : captures;
+	public List<Move> getLegalMoves() { // coups legaux
+		List<Move> captures = getCaptureMoves(); // chercher captures
+		return captures.isEmpty() ? getSimpleMoves() : captures; // capture prioritaire
 	}
 
-	private List<Move> getSimpleMoves() {
-		List<Move> moves = new ArrayList<>();
-		for (int row = 0; row < BOARD_SIZE; row++) {
-			for (int col = 0; col < BOARD_SIZE; col++) {
-				char piece = board[row][col];
-				if (!isCurrentPlayerPiece(piece)) {
-					continue;
+	private List<Move> getSimpleMoves() { // coups simples
+		List<Move> moves = new ArrayList<>(); // resultat
+		for (int row = 0; row < BOARD_SIZE; row++) { // boucle lignes
+			for (int col = 0; col < BOARD_SIZE; col++) { // boucle colonnes
+				Piece piece = board[row][col].getPiece(); // lire piece
+				if (!isCurrentPlayerPiece(piece)) { // ignorer autres pieces
+					continue; // passer suite
 				}
 
-				for (int[] dir : directionsFor(piece)) {
-					int newRow = row + dir[0];
-					int newCol = col + dir[1];
-					if (isValidPosition(newRow, newCol) && board[newRow][newCol] == '.') {
-						moves.add(new Move(row, col, newRow, newCol));
+				if (piece.isDame()) { // dame = loin
+					for (int[] dir : directionsFor(piece)) { // directions diagonales
+						for (int step = 1; ; step++) { // avance libre
+							int newRow = row + dir[0] * step; // ligne destination
+							int newCol = col + dir[1] * step; // colonne destination
+							if (!isValidPosition(newRow, newCol) || !board[newRow][newCol].isEmpty()) { // blocage
+								break; // stop direction
+							}
+							moves.add(new Move(row, col, newRow, newCol)); // ajouter coup
+						}
+					}
+				} else { // pion normal
+					for (int[] dir : directionsFor(piece)) { // parcourir directions
+						int newRow = row + dir[0]; // ligne destination
+						int newCol = col + dir[1]; // colonne destination
+						if (isValidPosition(newRow, newCol) && board[newRow][newCol].isEmpty()) { // deplacement valide
+							moves.add(new Move(row, col, newRow, newCol)); // ajouter coup
+						}
 					}
 				}
 			}
 		}
-		return moves;
+		return moves; // renvoyer liste
 	}
 
-	private List<Move> getCaptureMoves() {
-		List<Move> captures = new ArrayList<>();
-		for (int row = 0; row < BOARD_SIZE; row++) {
-			for (int col = 0; col < BOARD_SIZE; col++) {
-				char piece = board[row][col];
-				if (!isCurrentPlayerPiece(piece)) {
-					continue;
+	private List<Move> getCaptureMoves() { // coups capture
+		List<Move> captures = new ArrayList<>(); // resultat
+		for (int row = 0; row < BOARD_SIZE; row++) { // boucle lignes
+			for (int col = 0; col < BOARD_SIZE; col++) { // boucle colonnes
+				Piece piece = board[row][col].getPiece(); // lire piece
+				if (!isCurrentPlayerPiece(piece)) { // ignorer autres pieces
+					continue; // passer suite
 				}
-				List<Move> pieceCaptures = new ArrayList<>();
-				findAllCaptures(row, col, new Move(row, col, row, col), pieceCaptures);
-				captures.addAll(pieceCaptures);
+				List<Move> pieceCaptures = new ArrayList<>(); // captures de cette piece
+				findAllCaptures(row, col, new Move(row, col, row, col), pieceCaptures); // lancer recherche
+				captures.addAll(pieceCaptures); // fusionner resultat
 			}
 		}
-		return captures;
+		return captures; // renvoyer liste
 	}
 
-	private void findAllCaptures(int row, int col, Move currentMove, List<Move> allCaptures) {
-		boolean foundFurther = false;
-		for (int[] dir : directionsFor(board[row][col])) {
-			int opponentRow = row + dir[0];
-			int opponentCol = col + dir[1];
-			int destRow = row + 2 * dir[0];
-			int destCol = col + 2 * dir[1];
+	private void findAllCaptures(int row, int col, Move currentMove, List<Move> allCaptures) { // capture recursive
+		boolean foundFurther = false; // drapeau capture suivante
+		Piece piece = board[row][col].getPiece(); // piece courante
+		for (int[] dir : directionsFor(piece)) { // parcourir directions
+			if (piece.isDame()) { // dame = capture longue
+				int scanRow = row + dir[0]; // scan ligne
+				int scanCol = col + dir[1]; // scan colonne
+				while (isValidPosition(scanRow, scanCol) && board[scanRow][scanCol].isEmpty()) { // cases vides
+					scanRow += dir[0]; // avancer ligne
+					scanCol += dir[1]; // avancer colonne
+				}
+				if (!isValidPosition(scanRow, scanCol) || !isOpponentPiece(board[scanRow][scanCol].getPiece())) { // pas d'adversaire
+					continue; // prochaine dir
+				}
 
-			if (isValidPosition(opponentRow, opponentCol) && 
-				isValidPosition(destRow, destCol) &&
-				board[destRow][destCol] == '.' &&
-				isOpponentPiece(opponentRow, opponentCol)) {
-				foundFurther = true;
+				int opponentRow = scanRow; // ligne adverse
+				int opponentCol = scanCol; // colonne adverse
+				scanRow += dir[0]; // case apres adversaire
+				scanCol += dir[1]; // case apres adversaire
+				while (isValidPosition(scanRow, scanCol) && board[scanRow][scanCol].isEmpty()) { // landing libre
+					foundFurther = true; // au moins une capture
+					Piece capturedPiece = board[opponentRow][opponentCol].getPiece(); // sauver piece captee
+					board[opponentRow][opponentCol].clear(); // retirer adversaire
+					board[scanRow][scanCol].setPiece(piece); // poser dame
+					board[row][col].clear(); // vider origine
 
-				char capturedPiece = board[opponentRow][opponentCol];
-				board[opponentRow][opponentCol] = '.';
-				board[destRow][destCol] = board[row][col];
-				board[row][col] = '.';
+					currentMove.capturedPieces.add(new int[]{opponentRow, opponentCol}); // stocker capture
+					currentMove.toRow = scanRow; // maj fin ligne
+					currentMove.toCol = scanCol; // maj fin colonne
 
-				int[] captured = {opponentRow, opponentCol};
-				currentMove.capturedPieces.add(captured);
-				currentMove.toRow = destRow;
-				currentMove.toCol = destCol;
+					findAllCaptures(scanRow, scanCol, currentMove, allCaptures); // recursion
 
-				findAllCaptures(destRow, destCol, currentMove, allCaptures);
+					board[row][col].setPiece(piece); // restaurer origine
+					board[opponentRow][opponentCol].setPiece(capturedPiece); // restaurer adversaire
+					board[scanRow][scanCol].clear(); // nettoyer destination
 
-				board[row][col] = board[destRow][destCol];
-				board[opponentRow][opponentCol] = capturedPiece;
-				board[destRow][destCol] = '.';
+					currentMove.capturedPieces.remove(currentMove.capturedPieces.size() - 1); // retirer capture
+					currentMove.toRow = row; // restaurer fin ligne
+					currentMove.toCol = col; // restaurer fin colonne
 
-				currentMove.capturedPieces.remove(currentMove.capturedPieces.size() - 1);
-				currentMove.toRow = row;
-				currentMove.toCol = col;
+					scanRow += dir[0]; // prochaine landing
+					scanCol += dir[1]; // prochaine landing
+				}
+			} else { // pion normal = capture courte
+				int opponentRow = row + dir[0]; // ligne adversaire
+				int opponentCol = col + dir[1]; // colonne adversaire
+				int destRow = row + 2 * dir[0]; // ligne destination
+				int destCol = col + 2 * dir[1]; // colonne destination
+
+				if (isValidPosition(opponentRow, opponentCol) && // adversaire dans plateau
+					isValidPosition(destRow, destCol) && // destination dans plateau
+					board[destRow][destCol].isEmpty() && // destination libre
+					isOpponentPiece(board[opponentRow][opponentCol].getPiece())) { // case intermediaire adverse
+					foundFurther = true; // au moins une capture
+
+					Piece capturedPiece = board[opponentRow][opponentCol].getPiece(); // sauver piece captee
+					board[opponentRow][opponentCol].clear(); // retirer adversaire
+					board[destRow][destCol].setPiece(piece); // deplacer piece
+					board[row][col].clear(); // vider origine
+
+					currentMove.capturedPieces.add(new int[]{opponentRow, opponentCol}); // stocker capture
+					currentMove.toRow = destRow; // maj fin ligne
+					currentMove.toCol = destCol; // maj fin colonne
+
+					findAllCaptures(destRow, destCol, currentMove, allCaptures); // recursion
+
+					board[row][col].setPiece(piece); // restaurer origine
+					board[opponentRow][opponentCol].setPiece(capturedPiece); // restaurer adversaire
+					board[destRow][destCol].clear(); // nettoyer destination
+
+					currentMove.capturedPieces.remove(currentMove.capturedPieces.size() - 1); // retirer capture
+					currentMove.toRow = row; // restaurer fin ligne
+					currentMove.toCol = col; // restaurer fin colonne
+				}
 			}
 		}
 
-		if (!foundFurther && !currentMove.capturedPieces.isEmpty()) {
-			Move completedMove = new Move(currentMove.fromRow, currentMove.fromCol, 
-										 currentMove.toRow, currentMove.toCol);
-			completedMove.capturedPieces.addAll(currentMove.capturedPieces);
-			allCaptures.add(completedMove);
+		if (!foundFurther && !currentMove.capturedPieces.isEmpty()) { // fin de sequence
+			Move completedMove = new Move(currentMove.fromRow, currentMove.fromCol, // recopie debut
+										 currentMove.toRow, currentMove.toCol); // recopie fin
+			completedMove.capturedPieces.addAll(currentMove.capturedPieces); // recopie captures
+			allCaptures.add(completedMove); // ajouter sequence finale
 		}
 	}
 
-	private int[][] directionsFor(char piece) {
-		if (Character.isUpperCase(piece)) {
-			return ALL_DIAGONALS;
+	private int[][] directionsFor(Piece piece) { // directions autorisees
+		if (piece.isDame()) { // si dame
+			return ALL_DIAGONALS; // 4 diagonales
 		}
-		return currentPlayer == 'r' ? RED_FORWARD : BLUE_FORWARD;
+		return currentPlayer == 'r' ? RED_FORWARD : BLUE_FORWARD; // sens normal selon joueur
 	}
 
-	private boolean isCurrentPlayerPiece(char piece) {
-		return piece != '.' && Character.toLowerCase(piece) == currentPlayer;
+	private boolean isCurrentPlayerPiece(Piece piece) { // piece du joueur courant
+		return piece != null && piece.isOwner(currentPlayer); // test appartenance
 	}
 
-	private boolean isValidPosition(int row, int col) {
-		return row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE 
-			&& (row + col) % 2 == 1; // Case sombre
+	private boolean isValidPosition(int row, int col) { // case jouable valide
+		return row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE // dans limites
+			&& (row + col) % 2 == 1; // case sombre
 	}
 
-	private boolean isOpponentPiece(int row, int col) {
-		char piece = board[row][col];
-		return piece != '.' && Character.toLowerCase(piece) != currentPlayer;
+	private boolean isOpponentPiece(Piece piece) { // piece adverse
+		return piece != null && !piece.isOwner(currentPlayer); // test adversaire
 	}
 
-	// ===== EXECUTER UN MOUVEMENT =====
-	public void executeMove(Move move) {
-		char piece = board[move.fromRow][move.fromCol];
-		board[move.toRow][move.toCol] = piece;
-		board[move.fromRow][move.fromCol] = '.';
-		
-		// Capturer les pions
-		for (int[] capturedPos : move.capturedPieces) {
-			board[capturedPos[0]][capturedPos[1]] = '.';
+	public void executeMove(Move move) { // appliquer coup
+		Piece piece = board[move.fromRow][move.fromCol].getPiece(); // piece source
+		board[move.toRow][move.toCol].setPiece(piece); // poser destination
+		board[move.fromRow][move.fromCol].clear(); // vider source
+
+		for (int[] capturedPos : move.capturedPieces) { // supprimer captures
+			board[capturedPos[0]][capturedPos[1]].clear(); // vider case captee
 		}
-		
-		// Promotion dame (RED 'r' -> 'R' at row 0, BLUE 'b' -> 'B' at row 9)
-		if (piece == 'r' && move.toRow == 0) {
-			board[move.toRow][move.toCol] = 'R';
-		} else if (piece == 'b' && move.toRow == 9) {
-			board[move.toRow][move.toCol] = 'B';
-		}
-		
-		// Changer joueur
-		currentPlayer = (currentPlayer == 'r') ? 'b' : 'r';
-	}
 
-	public char[][] getBoard() {
-		return board;
-	}
-
-	public char getCurrentPlayer() {
-		return currentPlayer;
-	}
-
-	public void setCurrentPlayer(char player) {
-		this.currentPlayer = player;
-	}
-
-	public void display() {
-		System.out.println("  a b c d e f g h i j");
-		for (int row = 0; row < BOARD_SIZE; row++) {
-			int displayRow = BOARD_SIZE - row;
-			if (displayRow < 10) {
-				System.out.print(displayRow + " ");
-			} else {
-				System.out.print(displayRow);
+		if (piece != null && !piece.isDame()) { // promotion pion
+			if (piece.isOwner('r') && move.toRow == 0) { // promo rouge
+				board[move.toRow][move.toCol].setPiece(new Dame('r')); // devient dame rouge
+			} else if (piece.isOwner('b') && move.toRow == 9) { // promo bleu
+				board[move.toRow][move.toCol].setPiece(new Dame('b')); // devient dame bleue
 			}
-			for (int col = 0; col < BOARD_SIZE; col++) {
-				System.out.print(board[row][col] + " ");
-			}
-			System.out.println();
 		}
-		System.out.println("Joueur actuel: " + currentPlayer);
+
+		currentPlayer = (currentPlayer == 'r') ? 'b' : 'r'; // changer tour
+	}
+
+	public char[][] getBoard() { // getter grille
+		char[][] snapshot = new char[BOARD_SIZE][BOARD_SIZE]; // vue char pour UI
+		for (int row = 0; row < BOARD_SIZE; row++) { // boucle lignes
+			for (int col = 0; col < BOARD_SIZE; col++) { // boucle colonnes
+				snapshot[row][col] = board[row][col].toBoardChar(); // convertir
+			}
+		}
+		return snapshot; // renvoyer grille
+	}
+
+	public char getCurrentPlayer() { // getter joueur
+		return currentPlayer; // renvoyer joueur
+	}
+
+	public void setCurrentPlayer(char player) { // setter joueur
+		this.currentPlayer = player; // maj joueur
+	}
+
+	public boolean hasPieces(char player) { // pieces restantes
+		for (int row = 0; row < BOARD_SIZE; row++) { // boucle lignes
+			for (int col = 0; col < BOARD_SIZE; col++) { // boucle colonnes
+				Piece piece = board[row][col].getPiece(); // lire piece
+				if (piece != null && piece.isOwner(player)) { // piece trouvee
+					return true; // oui
+				}
+			}
+		}
+		return false; // non
+	}
+
+	public boolean hasLegalMoves(char player) { // coups restants
+		char savedPlayer = currentPlayer; // sauvegarder tour
+		currentPlayer = player; // tester joueur
+		boolean hasMoves = !getLegalMoves().isEmpty(); // verifier coups
+		currentPlayer = savedPlayer; // restaurer tour
+		return hasMoves; // renvoyer resultat
+	}
+
+	public void display() { // affichage console
+		System.out.println("  a b c d e f g h i j"); // entete colonnes
+		char[][] snapshot = getBoard(); // vue imprimable
+		for (int row = 0; row < BOARD_SIZE; row++) { // boucle lignes
+			int displayRow = BOARD_SIZE - row; // numero visuel
+			if (displayRow < 10) { // aligner 1 chiffre
+				System.out.print(displayRow + " "); // print num
+			} else { // deja 2 chiffres
+				System.out.print(displayRow); // print num
+			}
+			for (int col = 0; col < BOARD_SIZE; col++) { // boucle colonnes
+				System.out.print(snapshot[row][col] + " "); // print case
+			}
+			System.out.println(); // saut ligne
+		}
+		System.out.println("Joueur actuel: " + currentPlayer); // print tour
 	}
 }
 
-class Move {
-	public int fromRow;
-	public int fromCol;
-	public int toRow;
-	public int toCol;
-	public List<int[]> capturedPieces;
+class Move { // modele coup
+	public int fromRow; // origine ligne
+	public int fromCol; // origine colonne
+	public int toRow; // destination ligne
+	public int toCol; // destination colonne
+	public List<int[]> capturedPieces; // positions capturees
 
-	public Move(int fromRow, int fromCol, int toRow, int toCol) {
-		this.fromRow = fromRow;
-		this.fromCol = fromCol;
-		this.toRow = toRow;
-		this.toCol = toCol;
-		this.capturedPieces = new ArrayList<>();
+	public Move(int fromRow, int fromCol, int toRow, int toCol) { // constructeur
+		this.fromRow = fromRow; // set origine ligne
+		this.fromCol = fromCol; // set origine colonne
+		this.toRow = toRow; // set destination ligne
+		this.toCol = toCol; // set destination colonne
+		this.capturedPieces = new ArrayList<>(); // init liste captures
 	}
 
 	@Override
-	public String toString() {
-		return String.format("Move({%d,%d} -> {%d,%d})", fromRow, fromCol, toRow, toCol);
+	public String toString() { // debug texte
+		return String.format("Move({%d,%d} -> {%d,%d})", fromRow, fromCol, toRow, toCol); // format affichage
 	}
 }

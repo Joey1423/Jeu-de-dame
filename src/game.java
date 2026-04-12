@@ -1,35 +1,34 @@
-import java.awt.*;
-import java.awt.event.*;
-import java.util.List;
-import javax.swing.*;
+import java.awt.*; // imports AWT UI
+import java.awt.event.*; // imports events
+import javax.swing.*; // imports Swing
 
-public class game extends JFrame {
-    private static final String SCREEN_HOME = "home";
-    private static final String SCREEN_PLAY = "play";
-    private static final String SCREEN_PLAYERS = "players";
-    private static final String SCREEN_RULES = "rules";
-    private static final String SCREEN_SELECT_MAP = "select-map";
-    private static final String SCREEN_BOARD_LEVEL1 = "board-level1";
-    private static final String SCREEN_BOARD_LEVEL2 = "board-level2";
-    private static final String SCREEN_BOARD_AI = "board-ai";
+public class game extends JFrame { // fenetre principale
+    private static final String SCREEN_HOME = "home"; // id accueil
+    private static final String SCREEN_PLAY = "play"; // id choix mode
+    private static final String SCREEN_PLAYERS = "players"; // id saisie noms
+    private static final String SCREEN_RULES = "rules"; // id regles
+    private static final String SCREEN_SELECT_MAP = "select-map"; // id choix map
+    private static final String SCREEN_BOARD_LEVEL1 = "board-level1"; // id plateau map1
+    private static final String SCREEN_BOARD_LEVEL2 = "board-level2"; // id plateau map2
+    private static final String SCREEN_BOARD_AI = "board-ai"; // id plateau IA
 
-    private final CardLayout cardLayout;
-    private final JPanel cardPanel;
-    private String playerOneName = "Joueur 1";
-    private String playerTwoName = "Joueur 2";
+    private final CardLayout cardLayout; // navigation ecrans
+    private final JPanel cardPanel; // conteneur cartes
+    private String playerOneName = "Joueur 1"; // nom rouge
+    private String playerTwoName = "Joueur 2"; // nom noir
 
-    private enum ButtonStyle { PRIMARY, SECONDARY }
+    private enum ButtonStyle { PRIMARY, SECONDARY } // style boutons
 
-    public game() {
-        super("Jeu de Dames");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(980, 700);
-        setMinimumSize(new Dimension(800, 600));
-        setLocationRelativeTo(null);
+    public game() { // constructeur UI
+        super("Jeu de Dames"); // titre fenetre
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // fermeture app
+        setSize(980, 700); // taille initiale
+        setMinimumSize(new Dimension(800, 600)); // taille min
+        setLocationRelativeTo(null); // centrer ecran
 
-        cardLayout = new CardLayout();
-        cardPanel = new JPanel(cardLayout);
-        cardPanel.setOpaque(false);
+        cardLayout = new CardLayout(); // init layout cartes
+        cardPanel = new JPanel(cardLayout); // panel central
+        cardPanel.setOpaque(false); // fond transparent
 
         // Initialisation des écrans
         cardPanel.add(createHomeScreen(), SCREEN_HOME);
@@ -39,17 +38,17 @@ public class game extends JFrame {
         
         refreshNamedScreens(); // Crée les écrans de jeu avec les noms par défaut
 
-        GradientBackgroundPanel root = new GradientBackgroundPanel();
-        root.setLayout(new BorderLayout());
-        root.add(cardPanel, BorderLayout.CENTER);
-        setContentPane(root);
+        GradientBackgroundPanel root = new GradientBackgroundPanel(); // fond degrade
+        root.setLayout(new BorderLayout()); // layout racine
+        root.add(cardPanel, BorderLayout.CENTER); // injecter cartes
+        setContentPane(root); // poser racine
 
-        showScreen(SCREEN_HOME);
+        showScreen(SCREEN_HOME); // ecran initial
     }
 
     // --- LOGIQUE DE NAVIGATION ---
-    private void showScreen(String screen) {
-        cardLayout.show(cardPanel, screen);
+    private void showScreen(String screen) { // changer ecran
+        cardLayout.show(cardPanel, screen); // afficher carte
     }
 
     private void refreshNamedScreens() {
@@ -222,25 +221,29 @@ public class game extends JFrame {
         return preview;
     }
 
-    private JPanel createBoard1v1Screen(int level) {
-        RoundedPanel card = createGameCard();
-        CheckersBoardPanel board = new CheckersBoardPanel(level);
-        JLabel turnLabel = createStatusLabel("Au tour de " + playerOneName);
-        board.bindStatusLabels(turnLabel, playerOneName, playerTwoName);
+    private JPanel createBoard1v1Screen(int level) { // plateau humain vs humain
+        return createBoardScreen(level, false); // IA off
+    }
 
-        JPanel arenaPanel = new JPanel(new BorderLayout(15, 0));
-        arenaPanel.setOpaque(false);
+    private JPanel createBoardScreen(int level, boolean aiEnabled) { // fabrique ecran partie
+        RoundedPanel card = createGameCard(); // carte de jeu
+        CheckersBoardPanel board = new CheckersBoardPanel(level, aiEnabled); // plateau custom
+        JLabel turnLabel = createStatusLabel("Au tour de " + playerOneName); // label tour
+        board.bindStatusLabels(turnLabel, playerOneName, playerTwoName); // noms joueurs
 
-        JList<String> redMoves = createMovesList();
-        JList<String> blackMoves = createMovesList();
-        board.bindMoveHistory(redMoves, blackMoves);
+        JPanel arenaPanel = new JPanel(new BorderLayout(15, 0)); // zone centrale
+        arenaPanel.setOpaque(false); // fond transparent
+
+        JList<String> redMoves = createMovesList(); // histo rouge
+        JList<String> blackMoves = createMovesList(); // histo noir
+        board.bindMoveHistory(redMoves, blackMoves); // lier histo
 
         arenaPanel.add(createMovesColumn(playerOneName + " (Rouge)", redMoves), BorderLayout.WEST);
         arenaPanel.add(board, BorderLayout.CENTER);
         arenaPanel.add(createMovesColumn(playerTwoName + " (Noir)", blackMoves), BorderLayout.EAST);
 
-        JButton back = createButton("Abandonner", ButtonStyle.SECONDARY);
-        back.addActionListener(e -> showScreen(SCREEN_HOME));
+        JButton back = createButton("Abandonner", ButtonStyle.SECONDARY); // bouton quitter
+        back.addActionListener(e -> showScreen(SCREEN_HOME)); // retour accueil
 
         card.add(turnLabel);
         card.add(Box.createVerticalStrut(10));
@@ -250,20 +253,20 @@ public class game extends JFrame {
         return wrapCentered(card);
     }
 
-    private JPanel createBoardAiScreen() {
-        return createBoard1v1Screen(1); // Simplifié pour l'exemple
+    private JPanel createBoardAiScreen() { // plateau mode IA
+        return createBoardScreen(1, true); // IA on
     }
 
-    private JPanel createRulesScreen() {
-        RoundedPanel card = createCardBase("Regles");
-        JTextArea area = new JTextArea("1. Déplacement en diagonale.\n2. Capture obligatoire.\n3. Atteindre le bord = Dame.");
-        area.setOpaque(false);
-        area.setForeground(Color.WHITE);
-        card.add(area);
-        JButton back = createButton("Retour", ButtonStyle.SECONDARY);
-        back.addActionListener(e -> showScreen(SCREEN_HOME));
-        card.add(back);
-        return wrapCentered(card);
+    private JPanel createRulesScreen() { // ecran regles
+        RoundedPanel card = createCardBase("Regles"); // carte regles
+        JTextArea area = new JTextArea("1. Déplacement en diagonale.\n2. Capture obligatoire.\n3. Atteindre le bord = Dame."); // texte
+        area.setOpaque(false); // fond transparent
+        area.setForeground(Color.WHITE); // texte blanc
+        card.add(area); // ajouter texte
+        JButton back = createButton("Retour", ButtonStyle.SECONDARY); // bouton retour
+        back.addActionListener(e -> showScreen(SCREEN_HOME)); // action retour
+        card.add(back); // ajouter bouton
+        return wrapCentered(card); // centrer carte
     }
 
     // --- COMPOSANTS CUSTOMS ---
@@ -366,7 +369,8 @@ public class game extends JFrame {
         DefaultListModel<String> model = new DefaultListModel<>();
         model.addElement("Aucun déplacement");
         JList<String> list = new JList<>(model);
-        list.setBackground(new Color(24, 18, 12, 220));
+        list.setOpaque(true);
+        list.setBackground(new Color(24, 18, 12));
         list.setForeground(Color.WHITE);
         list.setSelectionBackground(new Color(116, 60, 28));
         list.setSelectionForeground(Color.WHITE);
@@ -379,6 +383,7 @@ public class game extends JFrame {
         panel.setLayout(new BorderLayout(0, 8));
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         panel.setPreferredSize(new Dimension(180, 360));
+        panel.setOpaque(true);
 
         JLabel header = new JLabel(title, SwingConstants.CENTER);
         header.setForeground(new Color(247, 184, 68));
@@ -387,8 +392,10 @@ public class game extends JFrame {
 
         JScrollPane scroll = new JScrollPane(movesList);
         scroll.setBorder(BorderFactory.createEmptyBorder());
-        scroll.getViewport().setOpaque(false);
-        scroll.setOpaque(false);
+        scroll.getViewport().setOpaque(true);
+        scroll.getViewport().setBackground(new Color(24, 18, 12));
+        scroll.setOpaque(true);
+        scroll.setBackground(new Color(24, 18, 12));
         panel.add(scroll, BorderLayout.CENTER);
 
         JPanel wrapper = new JPanel(new BorderLayout());
@@ -399,138 +406,128 @@ public class game extends JFrame {
 
     // --- CLASSES INTERNES DE DESSIN ---
 
-    private static class CheckersBoardPanel extends JPanel {
-        private final int boardSize = 10;
-        private final Plateau plateau = new Plateau();
-        private final int mapLevel;
-        private int cell, xOffset, yOffset;
-        private JLabel turnLabel;
-        private String redName, blackName;
-        private DefaultListModel<String> redMovesModel;
-        private DefaultListModel<String> blackMovesModel;
-        private int selectedRow = -1;
-        private int selectedCol = -1;
+    private static class CheckersBoardPanel extends JPanel { // composant plateau
+        private final int boardSize = 10; // taille cases
+        private final GameController controller = new GameController(); // logique partie
+        private final int mapLevel; // theme map
+        private final boolean aiEnabled; // mode IA
+        private final char aiPlayer = 'b'; // camp IA
+        private int cell, xOffset, yOffset; // geometrie plateau
+        private JLabel turnLabel; // label tour
+        private String redName, blackName; // noms joueurs
+        private DefaultListModel<String> redMovesModel; // histo rouge
+        private DefaultListModel<String> blackMovesModel; // histo noir
 
-        public CheckersBoardPanel(int level) {
-            this.mapLevel = level;
-            setOpaque(false);
-            setPreferredSize(new Dimension(450, 450));
+        public CheckersBoardPanel(int level, boolean aiEnabled) { // constructeur panneau
+            this.mapLevel = level; // set map
+            this.aiEnabled = aiEnabled; // set mode IA
+            setOpaque(false); // fond transparent
+            setPreferredSize(new Dimension(450, 450)); // taille preferee
             addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
-                    handleBoardClick(e.getX(), e.getY());
+                    handleBoardClick(e.getX(), e.getY()); // relayer clic
                 }
             });
         }
 
-        public void bindStatusLabels(JLabel l, String r, String b) {
-            this.turnLabel = l; this.redName = r; this.blackName = b;
+        public void bindStatusLabels(JLabel l, String r, String b) { // lier labels
+            this.turnLabel = l; this.redName = r; this.blackName = b; // stock refs
         }
 
-        public void bindMoveHistory(JList<String> redMoves, JList<String> blackMoves) {
-            this.redMovesModel = (DefaultListModel<String>) redMoves.getModel();
-            this.blackMovesModel = (DefaultListModel<String>) blackMoves.getModel();
+        public void bindMoveHistory(JList<String> redMoves, JList<String> blackMoves) { // lier historiques
+            this.redMovesModel = (DefaultListModel<String>) redMoves.getModel(); // model rouge
+            this.blackMovesModel = (DefaultListModel<String>) blackMoves.getModel(); // model noir
         }
 
-        public void recordMove(String move, boolean isRedPlayer) {
-            DefaultListModel<String> targetModel = isRedPlayer ? redMovesModel : blackMovesModel;
+        public void recordMove(String move, boolean isRedPlayer) { // push coup histo
+            DefaultListModel<String> targetModel = isRedPlayer ? redMovesModel : blackMovesModel; // choisir camp
             if (targetModel == null) {
-                return;
+                return; // securite
             }
             if (targetModel.size() == 1 && "Aucun déplacement".equals(targetModel.get(0))) {
-                targetModel.clear();
+                targetModel.clear(); // retirer placeholder
             }
-            targetModel.addElement(move);
+            targetModel.addElement(move); // ajouter coup
         }
 
-        private void handleBoardClick(int mouseX, int mouseY) {
-            if (cell <= 0) {
-                return;
+        private void handleBoardClick(int mouseX, int mouseY) { // clic utilisateur
+            if (cell <= 0 || controller.isGameOver()) {
+                return; // plateau inactif
+            }
+
+            if (aiEnabled && controller.getCurrentPlayer() == aiPlayer) {
+                return; // bloquer clic pendant tour IA
             }
 
             int col = (mouseX - xOffset) / cell;
             int row = (mouseY - yOffset) / cell;
             if (!isInsideBoard(row, col)) {
-                return;
+                return; // clic hors plateau
             }
 
-            char clickedPiece = plateau.getBoard()[row][col];
-            char currentPlayer = plateau.getCurrentPlayer();
-
-            if (selectedRow < 0) {
-                if (clickedPiece != '.' && Character.toLowerCase(clickedPiece) == currentPlayer) {
-                    selectedRow = row;
-                    selectedCol = col;
-                    repaint();
-                }
-                return;
-            }
-
-            if (clickedPiece != '.' && Character.toLowerCase(clickedPiece) == currentPlayer) {
-                selectedRow = row;
-                selectedCol = col;
-                repaint();
-                return;
-            }
-
-            Move selectedMove = findLegalMove(selectedRow, selectedCol, row, col);
-            if (selectedMove != null) {
-                boolean isRedTurn = currentPlayer == 'r';
-                String moveText = formatMove(selectedMove);
-                plateau.executeMove(selectedMove);
-                recordMove(moveText, isRedTurn);
-                updateTurnLabel();
-            }
-
-            selectedRow = -1;
-            selectedCol = -1;
-            repaint();
-        }
-
-        private Move findLegalMove(int fromRow, int fromCol, int toRow, int toCol) {
-            List<Move> legalMoves = plateau.getLegalMoves();
-            for (Move move : legalMoves) {
-                if (move.fromRow == fromRow && move.fromCol == fromCol && move.toRow == toRow && move.toCol == toCol) {
-                    return move;
+            GameController.ClickResult result = controller.handleClick(row, col); // deleguer controleur
+            if (result.moveExecuted) {
+                recordMove(result.moveText, result.wasRedTurn); // log coup
+                updateTurnLabel(); // maj label tour
+                checkGameOver(result); // popup fin si besoin
+                if (aiEnabled && !controller.isGameOver() && controller.getCurrentPlayer() == aiPlayer) {
+                    playAiTurn(); // enchainer tour IA
                 }
             }
-            return null;
+            if (result.selectionChanged || result.moveExecuted) {
+                repaint(); // rafraichir rendu
+            }
         }
 
-        private String formatMove(Move move) {
-            return positionToNotation(move.fromRow, move.fromCol) + " -> " + positionToNotation(move.toRow, move.toCol);
+        private void playAiTurn() { // tour auto IA
+            Timer timer = new Timer(300, e -> {
+                GameController.ClickResult aiResult = controller.playRandomMoveForCurrentPlayer(); // coup IA
+                if (aiResult.moveExecuted) {
+                    recordMove(aiResult.moveText, aiResult.wasRedTurn); // log IA
+                    updateTurnLabel(); // maj tour humain
+                }
+                checkGameOver(aiResult); // verifier fin
+                repaint(); // redraw
+            });
+            timer.setRepeats(false); // tir unique
+            timer.start(); // lancer timer
         }
 
-        private String positionToNotation(int row, int col) {
-            char file = (char) ('a' + col);
-            int rank = boardSize - row;
-            return "" + file + rank;
+        private boolean isInsideBoard(int row, int col) { // borne plateau
+            return row >= 0 && row < boardSize && col >= 0 && col < boardSize; // test bornes
         }
 
-        private boolean isInsideBoard(int row, int col) {
-            return row >= 0 && row < boardSize && col >= 0 && col < boardSize;
-        }
-
-        private void updateTurnLabel() {
+        private void updateTurnLabel() { // maj texte tour
             if (turnLabel == null) {
-                return;
+                return; // pas de label
             }
-            boolean redTurn = plateau.getCurrentPlayer() == 'r';
-            String currentName = redTurn ? redName : blackName;
-            turnLabel.setText("Au tour de " + currentName);
+            boolean redTurn = controller.getCurrentPlayer() == 'r'; // camp courant
+            String currentName = redTurn ? redName : blackName; // nom actif
+            turnLabel.setText("Au tour de " + currentName); // afficher
+        }
+
+        private void checkGameOver(GameController.ClickResult result) { // popup fin
+            if (result.winner != null) {
+                String winnerName = result.winner == 'r' ? redName : blackName; // nom gagnant
+                JOptionPane.showMessageDialog(this, winnerName + " a gagné la partie.", "Fin de partie", JOptionPane.INFORMATION_MESSAGE); // popup
+                if (turnLabel != null) {
+                    turnLabel.setText("Victoire de " + winnerName); // figer label
+                }
+            }
         }
 
         @Override
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        protected void paintComponent(Graphics g) { // rendu plateau
+            super.paintComponent(g); // paint parent
+            Graphics2D g2 = (Graphics2D) g.create(); // copie contexte
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); // anti alias
 
-            int margin = 40;
-            int size = Math.min(getWidth() - margin * 2, getHeight() - margin * 2);
-            cell = size / boardSize;
-            xOffset = (getWidth() - (cell * boardSize)) / 2;
-            yOffset = (getHeight() - (cell * boardSize)) / 2;
+            int margin = 40; // marge externe
+            int size = Math.min(getWidth() - margin * 2, getHeight() - margin * 2); // taille utile
+            cell = size / boardSize; // taille case
+            xOffset = (getWidth() - (cell * boardSize)) / 2; // decalage x
+            yOffset = (getHeight() - (cell * boardSize)) / 2; // decalage y
 
             Color lightSquare = mapLevel == 2 ? new Color(214, 0, 0) : new Color(235, 210, 180);
             Color darkSquare = mapLevel == 2 ? new Color(43, 57, 72) : new Color(133, 68, 30);
@@ -555,7 +552,7 @@ public class game extends JFrame {
                     g2.setColor((r + c) % 2 == 0 ? lightSquare : darkSquare);
                     g2.fillRect(x, y, cell, cell);
 
-                    if (r == selectedRow && c == selectedCol) {
+                    if (r == controller.getSelectedRow() && c == controller.getSelectedCol()) {
                         g2.setColor(new Color(247, 184, 68, 120));
                         g2.fillRect(x, y, cell, cell);
                     }
@@ -567,24 +564,34 @@ public class game extends JFrame {
                     }
 
                     // PIONS
-                    char piece = plateau.getBoard()[r][c];
+                    char piece = controller.getBoard()[r][c];
                     if (piece != '.') drawPiece(g2, x, y, piece);
                 }
             }
-            g2.dispose();
+            g2.dispose(); // lib context
         }
 
-        private void drawPiece(Graphics2D g2, int x, int y, char piece) {
-            int p = cell / 8;
-            int s = cell - p * 2;
-            g2.setColor(Character.toLowerCase(piece) == 'r' ? new Color(200, 50, 50) : Color.BLACK);
-            g2.fillOval(x + p, y + p, s, s);
-            g2.setColor(new Color(255, 255, 255, 50));
-            g2.drawOval(x + p + 4, y + p + 4, s - 8, s - 8);
+        private void drawPiece(Graphics2D g2, int x, int y, char piece) { // dessiner pion/dame
+            int p = cell / 8; // padding piece
+            int s = cell - p * 2; // taille piece
+            boolean redPiece = Character.toLowerCase(piece) == 'r'; // camp piece
+            g2.setColor(redPiece ? new Color(200, 50, 50) : Color.BLACK); // couleur base
+            g2.fillOval(x + p, y + p, s, s); // cercle piece
+            g2.setColor(new Color(255, 255, 255, 50)); // reflet
+            g2.drawOval(x + p + 4, y + p + 4, s - 8, s - 8); // contour reflet
+            if (Character.isUpperCase(piece)) {
+                g2.setColor(redPiece ? Color.WHITE : new Color(247, 184, 68)); // couleur marque dame
+                g2.setFont(new Font("SansSerif", Font.BOLD, Math.max(10, s / 3))); // font marque
+                String mark = "D"; // label dame
+                FontMetrics fm = g2.getFontMetrics(); // metrics texte
+                int tx = x + (cell - fm.stringWidth(mark)) / 2; // x centre
+                int ty = y + (cell + fm.getAscent()) / 2 - 2; // y centre
+                g2.drawString(mark, tx, ty); // dessiner marque
+            }
         }
     }
 
-    private static class GradientBackgroundPanel extends JPanel {
+    private static class GradientBackgroundPanel extends JPanel { // fond applique
         @Override
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
@@ -597,10 +604,10 @@ public class game extends JFrame {
         }
     }
 
-    private static class RoundedPanel extends JPanel {
-        private Color bg, border; private float w; private int arc;
-        public RoundedPanel(Color bg, Color brd, float w, int arc) {
-            this.bg = bg; this.border = brd; this.w = w; this.arc = arc; setOpaque(false);
+    private static class RoundedPanel extends JPanel { // panel arrondi
+        private Color bg, border; private float w; private int arc; // style panel
+        public RoundedPanel(Color bg, Color brd, float w, int arc) { // constructeur style
+            this.bg = bg; this.border = brd; this.w = w; this.arc = arc; setOpaque(false); // init + transparent
         }
         @Override
         protected void paintComponent(Graphics g) {
@@ -613,7 +620,7 @@ public class game extends JFrame {
         }
     }
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new game().setVisible(true));
+    public static void main(String[] args) { // entree app
+        SwingUtilities.invokeLater(() -> new game().setVisible(true)); // lancer UI EDT
     }
 }
